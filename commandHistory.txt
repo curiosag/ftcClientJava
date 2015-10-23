@@ -1,0 +1,163 @@
+select * from 1gr9_QnEKayZogN7hA73f1sKWC0C21IUcs7VKLo_z öüö
+select Company, 'Filing court district' from 1gr9_QnEKayZogN7hA73f1sKWC0C21IUcs7VKLo_z
+ öüö
+alter table oh rename to ah öüö
+alter table oh rename to ah; öüö
+alter table oh renaaame to ah; öüö
+select * from ah öüö
+alter table ah rename to wiki_cpdata öüö
+alter table COMB rename to combined_view öüö
+alter table 'View of Fuetterungen' rename to vFuetterungen öüö
+select * from stat_data limit 5 öüö
+select * from wiki_cpdata öüö
+select company, "Filing court district" from wiki_cpdata öüö
+select company, 'Filing court district' from wiki_cpdata öüö
+select company from wiki_cpdata öüö
+select * from wiki_cpdata öüö
+select Company from wiki_cpdata öüö
+select Company as C from wiki_cpdata
+where C matches('T.*') öüö
+select Company from wiki_cpdata
+where Company matches('T.*') öüö
+select Company from wiki_cpdata
+where Company matches('T') öüö
+select Company from wiki_cpdata
+where Company contains('T') ö��������������������������������ö
+select Company from wiki_cpdata öüö
+select Company from wiki_cpdata
+
+where Company contains('T') öüö
+select Company, 1 from wiki_cpdata
+ öüö
+select Company, 'a' from wiki_cpdata
+ öüö
+select Company from wiki_cpdata
+where Company starts with 'T'
+ öüö
+select Company from wiki_cpdata
+where not (Company starts with 'T')
+ öüö
+select Company from wiki_cpdata
+where Company starts with 'T'
+or Company starts with 'V' öüö
+select Company from wiki_cpdata
+where Company starts with 'T' AND Company starts with 'V' öüö
+select Company from wiki_cpdata
+where Company starts with 'T' OR Company starts with 'V' öüö
+select * from Fuetterungen öüö
+select SUM(menge) from Fuetterungen
+group by datum öüö
+select SUM(menge) from Fuetterungen
+group by datum
+having sum(menge) > 1000 öüö
+select SUM(menge) from Fuetterungen
+group by datum
+offset 0
+limit 2 öüö
+select * from Fuetterungen öüö
+select * from Fuetterungen
+WHere Menge > 100 ö��ö
+select * from Fuetterungen
+ öüö
+select * from Fuetterungen
+where menge > 100
+ öüö
+select * from Fuetterungen
+where menge > 100.3
+ öüö
+select * from Fuetterungen
+where menge > 200.3
+ öüö
+select * from Fuetterungen
+where menge > 200.3 E10
+ öüö
+select * from Fuetterungen
+where menge > 0.3
+ öüö
+select * from Fuetterungen
+where menge > .3
+ öüö
+select * from Fuetterungen öüö
+select * from Fuetterungen where menge > 100 öüö
+select * from Fuetterungen where menge > 100 and menge < 500 öüö
+select * from Fuetterungen where (menge > 100 and menge < 500) öüö
+select * from Fuetterungen
+ öüö
+rename 'View of Fuertterungen' to Fuetterungen; öüö
+alter table 'View of Fuertterungen' rename  to Fuetterungen; öüö
+alter table 'View of Fuetterungen' rename  to Fuetterungen; öüö
+alter table FuetterungenB rename  to vFuetterungen; öüö
+select * from vFuetterungen; öüö
+select * from vFuetterungen öüö
+select * from Fuetterungen öüö
+select * from vFuetterungen ��üö
+select * from 'View of Fuetterungen' öüö
+select * from v1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy öüö
+select * from 'v1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy' öüö
+select * from '1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy' öüö
+select * from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy öüö
+select * from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy; öüö
+select * from '1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy'; öüö
+select * from Fuetterungen öüö
+alter table vFuetterungen rename  to FLeer öüö
+select * from Fuetterungen as A öüö
+select * from Fuetterungen as A; öüö
+select A.id, Fuetterungen.menge from Fuetterungen as A; öüö
+select A.id, menge from Fuetterungen as A; öüö
+select * from FLeer; öüö
+alter table FLeer rename to FFLeer; öüö
+drop table FFLeer; öüö
+create view v as (select * from statData); öüö
+drop table v; öüö
+select * from Fuetterungen; öüö
+create view v as (
+
+select * from statData S1 left outer join statData S2 on S1.id = S2.id
+
+); öüö
+create view v as (select * from statData as s); öüö
+create view v as (
+
+select * from statData s1 left outer join statData s2 on s1.id = s2.id
+
+); öüö
+create view v as (
+
+select * from statData as s1 left outer join statData as s2 on s1.id = s2.id
+
+); öüö
+select * from Fuetterungen; öüö
+create view statDataA as (
+
+select * from statData
+
+); öüö
+create view v as (
+
+select * from statData as s1 left outer join statDataA as s2 on s1.id = s2.id
+
+); öüö
+select * from statData; öüö
+select * from statDataA; öüö
+select * from Fuetterungen; öüö
+create view FuetterungenA as (
+
+select * from Fuetterungen
+
+); öüö
+create view vFFuetterungen as (
+
+select * from Fuetterungen as s1 left outer join FuetterungenA as s2 on s1.id = s2.id
+
+); öüö
+create view vvFFuetterungen as (
+
+select * from vvFuetterungen as s1 left outer join vvFuetterungenA as s2 on s1.id = s2.id
+
+); öüö
+create view vFFuetterungen as (
+
+select * from vvFuetterungen as s1 left outer join vvFuetterungenB as s2 on s1.id = s2.id
+
+); öüö
+select * from vFFuetterungen;
