@@ -1,14 +1,25 @@
 import javax.swing.*;
 
+import com.google.common.base.Optional;
+
+import cg.common.check.Check;
 import cg.common.core.Logging;
 import cg.common.io.FileStringStorage;
 import cg.common.misc.CmdHistory;
 import fusiontables.FusionTablesConnector;
+import gc.common.structures.OrderedIntTuple;
+import interfeces.TableInfo;
+import manipulations.CursorContext;
+import manipulations.CursorContextColumnName;
+import manipulations.CursorContextTableName;
 import manipulations.QueryHandler;
+import util.StringUtil;
 
 import java.awt.*; //for layout managers and more
 import java.awt.event.*; //for action events
 import java.net.MalformedURLException;
+import java.util.LinkedList;
+import java.util.List;
 import java.io.IOException;
 
 public class Gui extends JPanel implements ActionListener, KeyListener {
@@ -40,8 +51,10 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 		}
 	};
 
+	private List<TableInfo> currentAutocompleteInfo = null;
 	private CmdHistory history = new CmdHistory(new FileStringStorage(historyStore));
-	private QueryHandler queryExecutor = new QueryHandler(logging, new FusionTablesConnector(logging));
+	private FusionTablesConnector connector = new FusionTablesConnector(logging);
+	private QueryHandler queryHandler = new QueryHandler(logging, connector);
 
 	public Gui() {
 		buildGui();
@@ -57,7 +70,7 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 	}
 
 	private void ohCmd() {
-		setResultText("nothing to do right now");
+		autocompleteCmd();
 	}
 
 	private void nextCmd() {
@@ -81,17 +94,17 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 	}
 
 	private void listTables() {
-		setResultText(queryExecutor.getTableInfo());
+		setResultText(queryHandler.getTableInfo());
 	}
 
 	private void preview() {
-		setResultText(queryExecutor.previewExecutedSql(getQueryText()));
+		setResultText(queryHandler.previewExecutedSql(getQueryText()));
 	}
 
 	private void execSql() {
 		String sql = getQueryText();
 		history.add(sql);
-		setResultText(queryExecutor.getQueryResult(sql));
+		setResultText(queryHandler.getQueryResult(sql));
 	}
 
 	private void displayUsageInfo() {
@@ -102,6 +115,7 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 		sb.append("F3 list tables \n");
 		sb.append("F4 preview sql \n");
 		sb.append("F5 execute sql \n");
+		sb.append("F11 autocomplete \n");
 		sb.append("F12 the oh command \n");
 		setResultText(sb.toString());
 	}
@@ -118,10 +132,10 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 			echoAction(prefix + source.getText() + "\"");
 		} else if (execSql.equals(e.getActionCommand())) {
 			echoAction(prefix + " query result");
-			runDeferred(() -> execSql());
+			execSql();
 		} else if (listTables.equals(e.getActionCommand())) {
 			echoAction(prefix + " table list");
-			runDeferred(() -> listTables());
+			listTables();
 		} else if (preview.equals(e.getActionCommand())) {
 			echoAction(prefix + "preview\"");
 			preview();
@@ -228,7 +242,7 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 
 		case KeyEvent.VK_F3:
 			echoAction("list tables");
-		    listTables();
+			listTables();
 			break;
 
 		case KeyEvent.VK_F4:
@@ -241,6 +255,10 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 			execSql();
 			break;
 
+		case KeyEvent.VK_F11:
+			autocompleteCmd();
+			break;
+
 		case KeyEvent.VK_F12:
 			echoAction("surprising things happen");
 			ohCmd();
@@ -250,6 +268,64 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 			break;
 		}
 
+	}
+
+	private final String exclude = "\"\"\"\"";
+
+	private void chooseTable(CursorContextTableName context) {
+
+		Completions.show(queryHandler.getTableList(! queryHandler.ADD_DETAILS), new ItemChosenHandler() {
+
+			@Override
+			public void onItemChosen(Optional<String> tableName, Optional<String> columnName) {
+				textFieldInf.setText(columnName.or("") + " " + tableName.or(""));
+				patch(context.boundariesTableName, tableName);
+			}
+
+		});
+	}
+
+	private void chooseColumn(CursorContextColumnName context) {
+		Completions.show(queryHandler.getTableList(queryHandler.ADD_DETAILS), new ItemChosenHandler() {
+
+			@Override
+			public void onItemChosen(Optional<String> tableName, Optional<String> columnName) {
+				textFieldInf.setText(columnName.or("") + " " + tableName.or(""));
+				patch(context.boundariesColumnName, columnName);
+			}
+
+		});
+
+	}
+	
+	private void patch(Optional<OrderedIntTuple> boundaries, Optional<String> tableName) {
+		if (tableName.isPresent())
+			queryText.setText(StringUtil.replace(queryText.getText(), boundaries.get(), tableName.get()));
+	}
+
+	private List<TableInfo> filterTableNames(Optional<String> prefix, boolean addDetails) {
+		List<TableInfo> info = queryHandler.getTableList(addDetails);
+
+		List<TableInfo> result;
+
+		result = new LinkedList<TableInfo>();
+		for (TableInfo t : info)
+			if (t.name.startsWith(prefix.or(exclude)))
+				result.add(t);
+
+		return result;
+	}
+
+	private void autocompleteCmd() {
+		int cursorPos = queryText.getCaretPosition();
+		String query = queryText.getText();
+		Optional<CursorContext> context = queryHandler.getCursorContext(query, cursorPos);
+
+		if (context.isPresent())
+			if (context.get() instanceof CursorContextTableName)
+				chooseTable((CursorContextTableName) context.get());
+			else
+				chooseColumn((CursorContextColumnName) context.get());
 	}
 
 	private JPanel createButtonArea() {
