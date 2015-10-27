@@ -18,7 +18,7 @@ import com.google.common.base.Optional;
 import interfeces.ColumnInfo;
 import interfeces.TableInfo;
 
-public class Completions extends JPanel implements ListSelectionListener, WindowListener, KeyListener {
+public class CompletionPicker extends JPanel implements ListSelectionListener, WindowListener, KeyListener {
 	private static final long serialVersionUID = -7917062917946392736L;
 
 	private Optional<String> itemSelected = Optional.absent();
@@ -45,7 +45,7 @@ public class Completions extends JPanel implements ListSelectionListener, Window
 	private JList<Item> itemListDisplay = new JList<Item>(model);
 	private JList<String> itemSubListDisplay = new JList<String>();
 
-	private Completions(ItemChosenHandler onItemChosen) {
+	private CompletionPicker(ItemChosenHandler onItemChosen) {
 		super(new GridLayout(0, 2));
 		add(itemListDisplay);
 		add(itemSubListDisplay);
@@ -82,8 +82,8 @@ public class Completions extends JPanel implements ListSelectionListener, Window
 
 	}
 
-	private static Completions createCompletions(List<TableInfo> tableInfo, ItemChosenHandler onItemChosen) {
-		Completions c = new Completions(onItemChosen);
+	private static CompletionPicker createCompletions(List<TableInfo> tableInfo, ItemChosenHandler onItemChosen) {
+		CompletionPicker c = new CompletionPicker(onItemChosen);
 		for (TableInfo i : tableInfo)
 			c.addItem(i.name, toArray(i.columns));
 		return c;
@@ -92,7 +92,7 @@ public class Completions extends JPanel implements ListSelectionListener, Window
 	public static void show(List<TableInfo> tableInfo, ItemChosenHandler onItemChosen) {
 		JFrame frame = new JFrame("Nested Lists");
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		Completions c = createCompletions(tableInfo, onItemChosen);
+		CompletionPicker c = createCompletions(tableInfo, onItemChosen);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		frame.add(c);
 		frame.addWindowListener(c);

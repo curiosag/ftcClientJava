@@ -2,27 +2,25 @@ import javax.swing.*;
 
 import com.google.common.base.Optional;
 
-import cg.common.check.Check;
 import cg.common.core.Logging;
 import cg.common.io.FileStringStorage;
 import cg.common.misc.CmdHistory;
 import fusiontables.FusionTablesConnector;
-import gc.common.structures.OrderedIntTuple;
 import interfeces.TableInfo;
 import manipulations.CursorContext;
-import manipulations.CursorContextColumnName;
-import manipulations.CursorContextTableName;
+import manipulations.CursorContextType;
 import manipulations.QueryHandler;
-import util.StringUtil;
-
+import manipulations.QueryManipulator.QueryPatcher;
 import java.awt.*; //for layout managers and more
 import java.awt.event.*; //for action events
 import java.net.MalformedURLException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 import java.io.IOException;
 
-public class Gui extends JPanel implements ActionListener, KeyListener {
+public class Gui extends JPanel implements ActionListener, KeyListener, Observer {
 	private static final long serialVersionUID = 1L;
 	private static final String textFieldString = "JTextField";
 	private static final String execSql = "execSql";
@@ -38,6 +36,8 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 	JTextField textFieldErr;
 	JTextField textFieldInf;
 
+	int lastKeycode = -1;
+
 	private Logging logging = new Logging() {
 
 		@Override
@@ -51,7 +51,6 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 		}
 	};
 
-	private List<TableInfo> currentAutocompleteInfo = null;
 	private CmdHistory history = new CmdHistory(new FileStringStorage(historyStore));
 	private FusionTablesConnector connector = new FusionTablesConnector(logging);
 	private QueryHandler queryHandler = new QueryHandler(logging, connector);
@@ -204,7 +203,7 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 		UIManager.put("swing.boldMetal", Boolean.FALSE);
 
 		JFrame frame = new JFrame("UI");
-		frame.setSize(1600, 1000);
+		frame.setSize(1800, 1500);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		Gui result = new Gui();
@@ -228,6 +227,7 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 	@Override
 	public void keyReleased(KeyEvent e) {
 		int keycode = e.getKeyCode();
+	
 		switch (keycode) {
 
 		case KeyEvent.VK_F1:
@@ -256,76 +256,55 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 			break;
 
 		case KeyEvent.VK_F11:
-			autocompleteCmd();
+			autocompleteCmd();	
 			break;
 
 		case KeyEvent.VK_F12:
 			echoAction("surprising things happen");
 			ohCmd();
+
 			break;
 
 		default:
 			break;
 		}
 
+		lastKeycode = keycode;
 	}
 
-	private final String exclude = "\"\"\"\"";
+	private void chooseReplacement(QueryPatcher patcher) {
+		if (!patcher.context.isPresent())
+			return;
 
-	private void chooseTable(CursorContextTableName context) {
+		CursorContext context = patcher.context.get();
+		CursorContextType contextType = context.contextType;
+		boolean addDetails = contextType == CursorContextType.column;
 
-		Completions.show(queryHandler.getTableList(! queryHandler.ADD_DETAILS), new ItemChosenHandler() {
-
+		Optional<String> prefixTable = contextType == CursorContextType.table ? context.name : context.otherName;
+		
+		TreeNamePicker.show(TreeTableInfo.toTree(queryHandler.getTableList(addDetails)), prefixTable, new ItemChosenHandler() {
 			@Override
-			public void onItemChosen(Optional<String> tableName, Optional<String> columnName) {
-				textFieldInf.setText(columnName.or("") + " " + tableName.or(""));
-				patch(context.boundariesTableName, tableName);
+			public void onItemChosen(Optional<String> parentItem, Optional<String> item) {
+				textFieldInf.setText(parentItem.or("<no parent>") + " " + item.or("<no item>"));
+				queryText.setText(patcher.patch(item, parentItem));
+				reSetCursor(patcher);
 			}
 
-		});
-	}
-
-	private void chooseColumn(CursorContextColumnName context) {
-		Completions.show(queryHandler.getTableList(queryHandler.ADD_DETAILS), new ItemChosenHandler() {
-
-			@Override
-			public void onItemChosen(Optional<String> tableName, Optional<String> columnName) {
-				textFieldInf.setText(columnName.or("") + " " + tableName.or(""));
-				patch(context.boundariesColumnName, columnName);
+			private void reSetCursor(QueryPatcher patcher) {
+				if (patcher.newCursorPosition.isPresent())
+					queryText.setCaretPosition(patcher.newCursorPosition.get());
+				else 
+					queryText.setCaretPosition(patcher.cursorPosition);
 			}
-
 		});
-
-	}
-	
-	private void patch(Optional<OrderedIntTuple> boundaries, Optional<String> tableName) {
-		if (tableName.isPresent())
-			queryText.setText(StringUtil.replace(queryText.getText(), boundaries.get(), tableName.get()));
-	}
-
-	private List<TableInfo> filterTableNames(Optional<String> prefix, boolean addDetails) {
-		List<TableInfo> info = queryHandler.getTableList(addDetails);
-
-		List<TableInfo> result;
-
-		result = new LinkedList<TableInfo>();
-		for (TableInfo t : info)
-			if (t.name.startsWith(prefix.or(exclude)))
-				result.add(t);
-
-		return result;
 	}
 
 	private void autocompleteCmd() {
 		int cursorPos = queryText.getCaretPosition();
 		String query = queryText.getText();
-		Optional<CursorContext> context = queryHandler.getCursorContext(query, cursorPos);
 
-		if (context.isPresent())
-			if (context.get() instanceof CursorContextTableName)
-				chooseTable((CursorContextTableName) context.get());
-			else
-				chooseColumn((CursorContextColumnName) context.get());
+		QueryPatcher patcher = queryHandler.getPatcher(query, cursorPos);
+		chooseReplacement(patcher);
 	}
 
 	private JPanel createButtonArea() {
@@ -447,6 +426,16 @@ public class Gui extends JPanel implements ActionListener, KeyListener {
 			c.weightx = 1.0;
 			container.add(textFields[i], c);
 		}
+	}
+
+	private void onStructureChanged() {
+
+	}
+
+	@Override
+	public void update(Observable o, Object arg) {
+		if (o instanceof QueryHandler)
+			runDeferred(() -> onStructureChanged());
 	}
 
 }

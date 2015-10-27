@@ -22,7 +22,7 @@ where Company matches('T.*') öüö
 select Company from wiki_cpdata
 where Company matches('T') öüö
 select Company from wiki_cpdata
-where Company contains('T') ö��������������������������������ö
+where Company contains('T') ö������������������������������������������ö
 select Company from wiki_cpdata öüö
 select Company from wiki_cpdata
 
@@ -54,7 +54,7 @@ select SUM(menge) from Fuetterungen
 group by datum
 offset 0
 limit 2 öüö
-select * from Fuetterungen öüö
+select * from Fuetterungen ��üö
 select * from Fuetterungen
 WHere Menge > 100 ö��ö
 select * from Fuetterungen
@@ -160,4 +160,13 @@ create view vFFuetterungen as (
 select * from vvFuetterungen as s1 left outer join vvFuetterungenB as s2 on s1.id = s2.id
 
 ); öüö
-select * from vFFuetterungen;
+select * from vFFuetterungen; öüö
+select 'Assets adjusted to the year 2012'
+FROM wiki_cpdata; öüö
+select 'Total Assets pre-filing'
+FROM wiki_cpdata; öüö
+select 'Filing court district'
+FROM wiki_cpdata; öüö
+alter table   1XUlqDv5p4cXbivEhTHT1Ui6Pfk8nd46tqNVRvKFR rename to v1; öüö
+alter table 1Iahoy4aX6jIDJgvXxScetcG2Vx6Ddo3rJVvOAnUE rename to v2; öüö
+alter table 1Iahoy4aX6jIDJgvXxScetcG2Vx6Ddo3rJVvOAnUE rename to v1;
