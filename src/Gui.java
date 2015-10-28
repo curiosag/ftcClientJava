@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 import com.google.common.base.Optional;
 
@@ -227,7 +228,7 @@ public class Gui extends JPanel implements ActionListener, KeyListener, Observer
 	@Override
 	public void keyReleased(KeyEvent e) {
 		int keycode = e.getKeyCode();
-	
+
 		switch (keycode) {
 
 		case KeyEvent.VK_F1:
@@ -256,7 +257,7 @@ public class Gui extends JPanel implements ActionListener, KeyListener, Observer
 			break;
 
 		case KeyEvent.VK_F11:
-			autocompleteCmd();	
+			autocompleteCmd();
 			break;
 
 		case KeyEvent.VK_F12:
@@ -278,25 +279,43 @@ public class Gui extends JPanel implements ActionListener, KeyListener, Observer
 
 		CursorContext context = patcher.context.get();
 		CursorContextType contextType = context.contextType;
-		boolean addDetails = contextType == CursorContextType.column;
+		boolean addDetails = contextType == CursorContextType.columnName;
 
-		Optional<String> prefixTable = contextType == CursorContextType.table ? context.name : context.otherName;
-		
-		TreeNamePicker.show(TreeTableInfo.toTree(queryHandler.getTableList(addDetails)), prefixTable, new ItemChosenHandler() {
-			@Override
-			public void onItemChosen(Optional<String> parentItem, Optional<String> item) {
-				textFieldInf.setText(parentItem.or("<no parent>") + " " + item.or("<no item>"));
-				queryText.setText(patcher.patch(item, parentItem));
-				reSetCursor(patcher);
-			}
+		Optional<String> selectionPrefix = getSelectionPrefix(context, contextType);
+		DefaultMutableTreeNode content = getSelectionContent(patcher);
+		if (content != null)
+			TreeNamePicker.show(content, selectionPrefix, new ItemChosenHandler() {
+				@Override
+				public void onItemChosen(Optional<String> parentItem, Optional<String> item) {
+					textFieldInf.setText(parentItem.or("<no parent>") + " " + item.or("<no item>"));
+					queryText.setText(patcher.patch(item, parentItem));
+					reSetCursor(patcher);
+				}
 
-			private void reSetCursor(QueryPatcher patcher) {
-				if (patcher.newCursorPosition.isPresent())
-					queryText.setCaretPosition(patcher.newCursorPosition.get());
-				else 
-					queryText.setCaretPosition(patcher.cursorPosition);
-			}
-		});
+				private void reSetCursor(QueryPatcher patcher) {
+					if (patcher.newCursorPosition.isPresent())
+						queryText.setCaretPosition(patcher.newCursorPosition.get());
+					else
+						queryText.setCaretPosition(patcher.cursorPosition);
+				}
+			});
+	}
+
+	private DefaultMutableTreeNode getSelectionContent(QueryPatcher patcher) {
+		CursorContext context = patcher.context.get();
+		CursorContextType contextType = context.contextType;
+
+		if (contextType == CursorContextType.anyRule)
+			return ToTreeData.fromContinuationList("continuations", patcher.getContinuations());
+		else {
+			boolean addDetails = contextType == CursorContextType.columnName;
+
+			return ToTreeData.fromTableInfo("tables", queryHandler.getTableList(addDetails));
+		}
+	}
+
+	private Optional<String> getSelectionPrefix(CursorContext context, CursorContextType contextType) {
+		return contextType == CursorContextType.tableName ? context.name : context.otherName;
 	}
 
 	private void autocompleteCmd() {

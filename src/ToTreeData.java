@@ -5,7 +5,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import interfeces.ColumnInfo;
 import interfeces.TableInfo;
 
-public class TreeTableInfo {
+public class ToTreeData {
 
 	private static String maybeQuoted(String value)
 	{
@@ -14,12 +14,24 @@ public class TreeTableInfo {
 		else
 			return value;
 	}
+
+	public static DefaultMutableTreeNode fromContinuationList(String caption, String[] values) {
+		if (values.length == 0)
+			return null;
+
+		DefaultMutableTreeNode root = new DefaultMutableTreeNode(caption);
+		for (String s : values) 
+			root.add(new DefaultMutableTreeNode(s + " "));
+		
+		return root;
+	}
+
 	
-	public static DefaultMutableTreeNode toTree(List<TableInfo> tables) {
+	public static DefaultMutableTreeNode fromTableInfo(String caption, List<TableInfo> tables) {
 		if (tables.size() == 0)
 			return null;
 
-		DefaultMutableTreeNode root = new DefaultMutableTreeNode("tables");
+		DefaultMutableTreeNode root = new DefaultMutableTreeNode(caption);
 		for (TableInfo t : tables)
 			append(root, t);
 
