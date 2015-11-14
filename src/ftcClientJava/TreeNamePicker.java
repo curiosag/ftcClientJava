@@ -1,3 +1,4 @@
+package ftcClientJava;
 
 /**
 * The MIT License
@@ -23,11 +24,9 @@
 */
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
@@ -238,7 +237,7 @@ public class TreeNamePicker extends JPanel implements WindowListener, KeyEventHa
 
 	@Override
 	public void windowClosing(WindowEvent e) {
-		String item = null;
+		Object item = null;
 		String parent = null;
 
 		if (!tree.isSelectionEmpty()) {
@@ -246,14 +245,14 @@ public class TreeNamePicker extends JPanel implements WindowListener, KeyEventHa
 			DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) path.getLastPathComponent();
 
 			if (longestPathCount() == 2 && path.getPathCount() == 2)
-				item = selectedNode.getUserObject().toString();
+				item = selectedNode.getUserObject();
 
 			if (longestPathCount() == 3)
 				if (path.getPathCount() == 2)
 					parent = selectedNode.getUserObject().toString();
 				else if (path.getPathCount() == 3) {
 					parent = path.getPathComponent(path.getPathCount() - 2).toString();
-					item = selectedNode.getUserObject().toString();
+					item = selectedNode.getUserObject();
 				}
 		}
 
@@ -304,11 +303,14 @@ public class TreeNamePicker extends JPanel implements WindowListener, KeyEventHa
 			public void run() {
 				Optional<String> prefix = Optional.absent();
 				show(getDemoTree(), prefix, new ItemChosenHandler() {
+
 					@Override
-					public void onItemChosen(Optional<String> patentItem, Optional<String> item) {
+					public void onItemChosen(Optional<String> parentItem, Optional<Object> item) {
 						System.out
-								.println(String.format("%s - %s", patentItem.or("<no parent>"), item.or("<no item>")));
+								.println(String.format("%s - %s", parentItem.or("<no parent>"), item.or("<no item>")));
+
 					}
+
 				});
 			}
 		});

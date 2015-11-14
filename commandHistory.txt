@@ -22,7 +22,7 @@ where Company matches('T.*') öüö
 select Company from wiki_cpdata
 where Company matches('T') öüö
 select Company from wiki_cpdata
-where Company contains('T') ö������������������������������������������ö
+where Company contains('T') ö��������������������������������������������������������ö
 select Company from wiki_cpdata öüö
 select Company from wiki_cpdata
 
@@ -53,7 +53,7 @@ having sum(menge) > 1000 öüö
 select SUM(menge) from Fuetterungen
 group by datum
 offset 0
-limit 2 öüö
+limit 2 öü��
 select * from Fuetterungen ��üö
 select * from Fuetterungen
 WHere Menge > 100 ö��ö
@@ -169,4 +169,69 @@ select 'Filing court district'
 FROM wiki_cpdata; öüö
 alter table   1XUlqDv5p4cXbivEhTHT1Ui6Pfk8nd46tqNVRvKFR rename to v1; öüö
 alter table 1Iahoy4aX6jIDJgvXxScetcG2Vx6Ddo3rJVvOAnUE rename to v2; öüö
-alter table 1Iahoy4aX6jIDJgvXxScetcG2Vx6Ddo3rJVvOAnUE rename to v1;
+alter table 1Iahoy4aX6jIDJgvXxScetcG2Vx6Ddo3rJVvOAnUE rename to v1; öüö
+select * from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy ; öüö
+select * from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy  öüö
+select * from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy; öüö
+select datum from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy; öüö
+select datum from Fuetterungen; öüö
+SELECT 'Total Assets pre-filing'
+FROM wiki_cpdata; öüö
+Select * from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy; öüö
+Select * from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy;; öüö
+Select * from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy;;;;; öüö
+Select * from '1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy'; öüö
+Select * from 1TypyBfvNYiwv5uvy9oFycJxfFv44FDARCWOTqy; öüö
+Select sum(menge)
+FROM Fuetterungen; öüö
+Select sum(menge)
+FROM Fuetterungen
+group by datum; öüö
+Select datum, sum(menge)
+FROM Fuetterungen
+group by datum; öüö
+Select datum, sum(id)
+FROM Fuetterungen
+group by datum; öüö
+Select * from wiki_cpdata; öüö
+Select Company, 'Assets adjusted to the year 2012'
+ from wiki_cpdata; öüö
+Select datum, sum(menge)
+FROM Fuetterungen
+group by datum; öüö
+DROP TABLE v; öüö
+Select datum, sum(id)
+FROM Fuetterungen
+where uhrzeit MATCHES 'a'
+group by datum; öüö
+select * from Fuetterungen öüö
+select * from Fuetterungen; öüö
+Select datum, sum(id)
+FROM Fuetterungen
+where uhrzeit MATCHES '18:00:00'
+group by datum; öüö
+Select datum, sum(id)
+FROM Fuetterungen
+where uhrzeit MATCHES '18.*'
+group by datum; öüö
+Select datum, sum(id)
+FROM Fuetterungen
+where uhrzeit MATCHES .*
+group by datum; öüö
+Select datum, sum(id)
+FROM Fuetterungen
+where uhrzeit MATCHES '.*'
+group by datum; öüö
+Select datum, sum(id)
+FROM Fuetterungen
+where uhrzeit MATCHES ".*"
+group by datum; öüö
+SELECT * from statDataA; öüö
+select * from statDataA; öüö
+select * from vvFuetterungenB; öüö
+ALTER TABLE combined_view rename to combiview; öüö
+SELECT mengeB
+FROM vvFuetterungen; öüö
+select * from Fuetterungen; öüö
+select * from statDataA; öüö
+

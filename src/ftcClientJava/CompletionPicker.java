@@ -1,3 +1,4 @@
+package ftcClientJava;
 import java.awt.GridLayout;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -15,14 +16,14 @@ import javax.swing.event.ListSelectionListener;
 
 import com.google.common.base.Optional;
 
-import interfeces.ColumnInfo;
-import interfeces.TableInfo;
+import interfacing.ColumnInfo;
+import interfacing.TableInfo;
 
 public class CompletionPicker extends JPanel implements ListSelectionListener, WindowListener, KeyListener {
 	private static final long serialVersionUID = -7917062917946392736L;
 
 	private Optional<String> itemSelected = Optional.absent();
-	private Optional<String> detailItemSelected = Optional.absent();
+	private Optional<Object> detailItemSelected = Optional.absent();
 	private final ItemChosenHandler onItemChosen;
 
 	private static class Item {
