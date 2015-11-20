@@ -16,35 +16,35 @@ import javax.swing.event.ListSelectionListener;
 
 import com.google.common.base.Optional;
 
-import interfacing.ColumnInfo;
-import interfacing.TableInfo;
+import interfacing.AbstractCompletion;
+import interfacing.Completions;
 
 public class CompletionPicker extends JPanel implements ListSelectionListener, WindowListener, KeyListener {
 	private static final long serialVersionUID = -7917062917946392736L;
 
-	private Optional<String> itemSelected = Optional.absent();
-	private Optional<Object> detailItemSelected = Optional.absent();
+	private Optional<Item> itemSelected = Optional.absent();
+	
 	private final ItemChosenHandler onItemChosen;
 
 	private static class Item {
-		private String value = null;
-		private DefaultListModel<String> subitems = new DefaultListModel<String>();
+		private AbstractCompletion value = null;
+		private DefaultListModel<Item> subitems = new DefaultListModel<Item>();
 
-		Item(String value, String[] subitems) {
+		Item(AbstractCompletion value, Item[] subitems) {
 			this.value = value;
-			for (String subitem : subitems)
+			for (Item subitem : subitems)
 				this.subitems.addElement(subitem);
 		}
 
 		public String toString() {
-			return value;
+			return value.toString();
 		}
 	}
 
 	private DefaultListModel<Item> model = new DefaultListModel<Item>();
 
 	private JList<Item> itemListDisplay = new JList<Item>(model);
-	private JList<String> itemSubListDisplay = new JList<String>();
+	private JList<Item> itemSubListDisplay = new JList<Item>();
 
 	private CompletionPicker(ItemChosenHandler onItemChosen) {
 		super(new GridLayout(0, 2));
@@ -56,7 +56,7 @@ public class CompletionPicker extends JPanel implements ListSelectionListener, W
 		this.onItemChosen = onItemChosen;
 	}
 
-	public void addItem(String item, String[] subitems) {
+	public void addItem(AbstractCompletion item, Item[] subitems) {
 		model.addElement(new Item(item, subitems));
 	}
 
@@ -65,35 +65,35 @@ public class CompletionPicker extends JPanel implements ListSelectionListener, W
 		if (e.getSource() == itemListDisplay) {
 			Item item = (Item) itemListDisplay.getSelectedValue();
 			itemSubListDisplay.setModel(item.subitems);
-			itemSelected = Optional.fromNullable(item.value);
+			itemSelected = Optional.fromNullable(item);
 		} else {
-			detailItemSelected = Optional.fromNullable(itemSubListDisplay.getSelectedValue());
+			itemSelected = Optional.fromNullable(itemSubListDisplay.getSelectedValue());
 		}
 	}
 
-	private static String[] toArray(List<ColumnInfo> columns) {
+	private static Item[] toArray(List<AbstractCompletion> columns) {
 
-		String[] result = new String[columns.size()];
+		Item[] result = new Item[columns.size()];
 		int count = 0;
-		for (ColumnInfo c : columns) {
-			result[count] = String.format("%s (%s)", c.name, c.type);
+		for (AbstractCompletion c : columns) {
+			result[count] = new Item(c, null);
 			count++;
 		}
 		return result;
 
 	}
 
-	private static CompletionPicker createCompletions(List<TableInfo> tableInfo, ItemChosenHandler onItemChosen) {
-		CompletionPicker c = new CompletionPicker(onItemChosen);
-		for (TableInfo i : tableInfo)
-			c.addItem(i.name, toArray(i.columns));
-		return c;
+	private static CompletionPicker createCompletions(List<AbstractCompletion> completions, ItemChosenHandler onItemChosen) {
+		CompletionPicker p = new CompletionPicker(onItemChosen);
+		for (AbstractCompletion c : completions)
+			p.addItem(c, toArray(c.children));
+		return p;
 	}
 
-	public static void show(List<TableInfo> tableInfo, ItemChosenHandler onItemChosen) {
+	public static void show(Completions completions, ItemChosenHandler onItemChosen) {
 		JFrame frame = new JFrame("Nested Lists");
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		CompletionPicker c = createCompletions(tableInfo, onItemChosen);
+		CompletionPicker c = createCompletions(completions.getAll(), onItemChosen);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		frame.add(c);
 		frame.addWindowListener(c);
@@ -104,7 +104,8 @@ public class CompletionPicker extends JPanel implements ListSelectionListener, W
 
 	@Override
 	public void windowClosing(WindowEvent e) {
-		onItemChosen.onItemChosen(itemSelected, detailItemSelected);
+		if (itemSelected.isPresent())
+			onItemChosen.onItemChosen(itemSelected.get().value);
 	}
 
 	

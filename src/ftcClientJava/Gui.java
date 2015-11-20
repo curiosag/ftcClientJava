@@ -17,12 +17,13 @@ import com.google.common.base.Optional;
 
 import cg.common.check.Check;
 import cg.common.interfaces.AbstractKeyListener;
-import interfacing.Completion;
+import interfacing.AbstractCompletion;
+import interfacing.CodeSnippetCompletion;
+import interfacing.SqlCompletionType;
 import interfacing.SyntaxElement;
 import interfacing.SyntaxElementSource;
 import interfacing.SyntaxElementType;
 import manipulations.CursorContext;
-import manipulations.CursorContextType;
 import manipulations.QueryHandler;
 import manipulations.QueryPatching;
 import parser.FusionTablesSqlParser;
@@ -52,7 +53,7 @@ public class Gui extends JPanel implements ActionListener, Observer {
 
 	final DefaultHighlighter highlighter = new DefaultHighlighter();
 	final Highlighter.HighlightPainter painter = new UnderlineHighlightPainter(Color.red);
-	
+
 	KeyboardActions keyActions = new KeyboardActions();
 
 	private final ActionListener controller;
@@ -81,7 +82,7 @@ public class Gui extends JPanel implements ActionListener, Observer {
 		// private final Style defaultStyle =
 		// StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
 
-		if (t == SyntaxElementType.error){
+		if (t == SyntaxElementType.error) {
 			StyleConstants.setItalic(s, true);
 		}
 
@@ -227,26 +228,23 @@ public class Gui extends JPanel implements ActionListener, Observer {
 	}
 
 	private void chooseReplacement(QueryPatching patcher) {
-		if (!patcher.context.isPresent())
-			return;
 
-		CursorContext context = patcher.context.get();
-		CursorContextType contextType = context.contextType;
+		CursorContext context = patcher.cursorContext;
+		SqlCompletionType contextType = context.getModelElementType();
 
 		Optional<String> selectionPrefix = getSelectionPrefix(context, contextType);
 		DefaultMutableTreeNode content = getSelectionContent(patcher);
 		if (content != null)
 			TreeNamePicker.show(content, selectionPrefix, new ItemChosenHandler() {
 				@Override
-				public void onItemChosen(Optional<String> parentItem, Optional<Object> item) {
-					hdlOnItemChosen(patcher, parentItem, item);
+				public void onItemChosen(AbstractCompletion item) {
+					hdlOnItemChosen(patcher, item);
 				}
 			});
 	}
 
-	private void hdlOnItemChosen(QueryPatching patcher, Optional<String> parentItem, Optional<Object> item) {
-		textFieldInf.setText(parentItem.or("<no parent>") + " " + item.or("<no item>"));
-		queryText.setText(patcher.patch(item, parentItem));
+	private void hdlOnItemChosen(QueryPatching patcher, AbstractCompletion item) {
+		queryText.setText(patcher.patch(item));
 		reSetCursor(patcher);
 		updateQueryTextHighlighting();
 		selectNextReplacementTag(0);
@@ -271,37 +269,11 @@ public class Gui extends JPanel implements ActionListener, Observer {
 	}
 
 	private DefaultMutableTreeNode getSelectionContent(QueryPatching patcher) {
-		CursorContext context = patcher.context.get();
-		CursorContextType contextType = context.contextType;
-
-		if (contextType == CursorContextType.anyRule)
-			return ToTreeData.fromContinuationList("continuations", patcher.getCompletions());
-		else {
-			boolean columnDetails = contextType == CursorContextType.columnName;
-
-			DefaultMutableTreeNode result = ToTreeData.fromTableInfo("tables", dataEngine.getTableList(columnDetails));
-			if (isExpressionContext(context))
-				addGeoExpressions(patcher.geoCompletions(), result);
-			return result;
-		}
+		return ToTreeData.fromCompletions("possible ways from here", patcher.getCompletions());
 	}
 
-	private boolean isExpressionContext(CursorContext context) {
-		for (ParserRuleContext e : context.contextStack)
-			if (e instanceof FusionTablesSqlParser.ExprContext)
-				return true;
-		return false;
-	}
-
-	private void addGeoExpressions(List<Completion> geoStuff, DefaultMutableTreeNode result) {
-		DefaultMutableTreeNode n = new DefaultMutableTreeNode("geographical selection expressions");
-		for (Completion e : geoStuff)
-			n.add(new DefaultMutableTreeNode(e));
-		result.add(n);
-	}
-
-	private Optional<String> getSelectionPrefix(CursorContext context, CursorContextType contextType) {
-		return contextType == CursorContextType.tableName ? context.name : context.otherName;
+	private Optional<String> getSelectionPrefix(CursorContext context, SqlCompletionType contextType) {
+		return contextType == SqlCompletionType.table ? context.name : context.otherName;
 	}
 
 	private JPanel createButtonArea() {

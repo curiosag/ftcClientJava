@@ -48,6 +48,9 @@ import javax.swing.tree.TreeSelectionModel;
 import com.google.common.base.Optional;
 
 import cg.common.check.Check;
+import interfacing.AbstractCompletion;
+import interfacing.ModelElementCompletion;
+import interfacing.SqlCompletionType;
 
 /**
  * 
@@ -209,13 +212,19 @@ public class TreeNamePicker extends JPanel implements WindowListener, KeyEventHa
 	};
 
 	private static DefaultMutableTreeNode getDemoTree() {
-
-		DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode("R");
-		DefaultMutableTreeNode child1Node = new DefaultMutableTreeNode("C1");
-		DefaultMutableTreeNode child2Node = new DefaultMutableTreeNode("C2");
-		DefaultMutableTreeNode child3Node = new DefaultMutableTreeNode("C3");
-		child1Node.add(new DefaultMutableTreeNode("C11"));
-		child1Node.add(new DefaultMutableTreeNode("C12"));
+		ModelElementCompletion rootC = new ModelElementCompletion(SqlCompletionType.table, "R", null);
+		ModelElementCompletion C1C = new ModelElementCompletion(SqlCompletionType.column, "C1", rootC);
+		ModelElementCompletion C2C = new ModelElementCompletion(SqlCompletionType.column, "C2", rootC);
+		ModelElementCompletion C3C = new ModelElementCompletion(SqlCompletionType.column, "C3", rootC);
+		ModelElementCompletion C11C = new ModelElementCompletion(SqlCompletionType.table, "C11", C1C);
+		ModelElementCompletion C12C = new ModelElementCompletion(SqlCompletionType.table, "C12", C1C);
+		
+		DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode(rootC);
+		DefaultMutableTreeNode child1Node = new DefaultMutableTreeNode(C1C);
+		DefaultMutableTreeNode child2Node = new DefaultMutableTreeNode(C2C);
+		DefaultMutableTreeNode child3Node = new DefaultMutableTreeNode(C3C);
+		child1Node.add(new DefaultMutableTreeNode(C11C));
+		child1Node.add(new DefaultMutableTreeNode(C12C));
 		rootNode.add(child1Node);
 		rootNode.add(child2Node);
 		rootNode.add(child3Node);
@@ -238,25 +247,27 @@ public class TreeNamePicker extends JPanel implements WindowListener, KeyEventHa
 	@Override
 	public void windowClosing(WindowEvent e) {
 		Object item = null;
-		String parent = null;
 
 		if (!tree.isSelectionEmpty()) {
 			TreePath path = tree.getSelectionPath();
 			DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) path.getLastPathComponent();
+			item = selectedNode.getUserObject();
 
 			if (longestPathCount() == 2 && path.getPathCount() == 2)
 				item = selectedNode.getUserObject();
 
 			if (longestPathCount() == 3)
 				if (path.getPathCount() == 2)
-					parent = selectedNode.getUserObject().toString();
+					item = selectedNode.getUserObject();
 				else if (path.getPathCount() == 3) {
-					parent = path.getPathComponent(path.getPathCount() - 2).toString();
 					item = selectedNode.getUserObject();
 				}
 		}
 
-		onChosen.onItemChosen(Optional.fromNullable(parent), Optional.fromNullable(item));
+		if (item != null) {
+			Check.isTrue(item instanceof AbstractCompletion);
+			onChosen.onItemChosen((AbstractCompletion) item);
+		}
 	}
 
 	@Override
@@ -305,9 +316,11 @@ public class TreeNamePicker extends JPanel implements WindowListener, KeyEventHa
 				show(getDemoTree(), prefix, new ItemChosenHandler() {
 
 					@Override
-					public void onItemChosen(Optional<String> parentItem, Optional<Object> item) {
-						System.out
-								.println(String.format("%s - %s", parentItem.or("<no parent>"), item.or("<no item>")));
+					public void onItemChosen(AbstractCompletion item) {
+						String itemText = item == null ? "<no item>" : item.displayName;
+						String parentText = item != null && item.parent != null ? item.parent.displayName
+								: "<no parent>";
+						System.out.println(String.format("%s - %s", parentText, itemText));
 
 					}
 

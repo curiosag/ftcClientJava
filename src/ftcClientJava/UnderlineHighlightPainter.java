@@ -19,18 +19,16 @@ public class UnderlineHighlightPainter extends DefaultHighlightPainter {
 	@Override
 	public void paint(Graphics g, int offs0, int offs1, Shape bounds, JTextComponent c) {
 		try {
-			// --- determine locations ---
 			TextUI mapper = c.getUI();
 			Rectangle p0 = mapper.modelToView(c, offs0);
 			Rectangle p1 = mapper.modelToView(c, offs1);
 
 			Color color = getColor();
 
-			if (color == null) {
+			if (color == null) 
 				g.setColor(c.getSelectionColor());
-			} else {
+			else 
 				g.setColor(color);
-			}
 
 			if (sameLine(p0, p1)) {
 				Rectangle r = p0.union(p1);

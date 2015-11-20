@@ -22,7 +22,7 @@ where Company matches('T.*') öüö
 select Company from wiki_cpdata
 where Company matches('T') öüö
 select Company from wiki_cpdata
-where Company contains('T') ö��������������������������������������������������������ö
+where Company contains('T') ö������������������������������������������������������������ö
 select Company from wiki_cpdata öüö
 select Company from wiki_cpdata
 
@@ -87,7 +87,7 @@ rename 'View of Fuertterungen' to Fuetterungen; öüö
 alter table 'View of Fuertterungen' rename  to Fuetterungen; öüö
 alter table 'View of Fuetterungen' rename  to Fuetterungen; öüö
 alter table FuetterungenB rename  to vFuetterungen; öüö
-select * from vFuetterungen; öüö
+select * from vFuetterungen; ��üö
 select * from vFuetterungen öüö
 select * from Fuetterungen öüö
 select * from vFuetterungen ��üö
@@ -234,4 +234,33 @@ SELECT mengeB
 FROM vvFuetterungen; öüö
 select * from Fuetterungen; öüö
 select * from statDataA; öüö
+select AVERAGE(mengeB), id
+from vvFuetterungenB; öüö
+select AVERAGE(mengeB)
+from vvFuetterungenB; öüö
+select AVERAGE(mengeB), SUM(mengeB)
+from vvFuetterungenB; öüö
+select AVERAGE(mengeB), SUM(mengeB)
+from vvFuetterungenB
+GROUP BY mengeB ORDER BY mengeB DESC ; öüö
+select SUM(mengeB)
+from vvFuetterungenB
+GROUP BY mengeB ORDER BY mengeB DESC ; öüö
+select mengeB
+from vvFuetterungenB
+GROUP BY mengeB; öüö
+select id, mengeB
+from vvFuetterungenB
+GROUP BY mengeB; öüö
+select id, mengeB
+from vvFuetterungenB
+GROUP BY mengeB, Id; öüö
+select id, mengeB
+from vvFuetterungenB
+GROUP BY mengeB, id; öüö
+select id, mengeB
+from vvFuetterungenB
+GROUP BY mengeB, id ORDER BY id DESC; öüö
+select a.jobwohnen from v1 as a öüö
+select a.jobwohnen from v1 as a; öüö
 

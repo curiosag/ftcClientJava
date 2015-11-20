@@ -1,8 +1,8 @@
 package ftcClientJava;
-import com.google.common.base.Optional;
+import interfacing.AbstractCompletion;
 
 public interface ItemChosenHandler {
 
-	public void onItemChosen(Optional<String> parentItem, Optional<Object> item);
+	public void onItemChosen(AbstractCompletion item);
 
 }

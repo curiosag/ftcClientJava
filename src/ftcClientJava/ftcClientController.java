@@ -2,7 +2,6 @@ package ftcClientJava;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
@@ -12,7 +11,6 @@ import javax.swing.JEditorPane;
 import com.google.common.base.Optional;
 
 import cg.common.core.Logging;
-import cg.common.interfaces.AbstractKeyListener;
 import cg.common.io.FileStringStorage;
 import cg.common.misc.CmdDestination;
 import cg.common.misc.CmdHistory;
@@ -23,7 +21,6 @@ import interfacing.SyntaxElementSource;
 import interfacing.TableInfo;
 import manipulations.QueryHandler;
 import manipulations.QueryPatching;
-import util.Op;
 
 public class ftcClientController implements ActionListener, SyntaxElementSource {
 	private static final String historyStore = "./commandHistory.txt";
