@@ -6,19 +6,17 @@ import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Document;
 import javax.swing.text.Highlighter;
+import javax.swing.text.Highlighter.HighlightPainter;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.tree.DefaultMutableTreeNode;
-
-import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.google.common.base.Optional;
 
 import cg.common.check.Check;
 import cg.common.interfaces.AbstractKeyListener;
 import interfacing.AbstractCompletion;
-import interfacing.CodeSnippetCompletion;
 import interfacing.SqlCompletionType;
 import interfacing.SyntaxElement;
 import interfacing.SyntaxElementSource;
@@ -26,13 +24,11 @@ import interfacing.SyntaxElementType;
 import manipulations.CursorContext;
 import manipulations.QueryHandler;
 import manipulations.QueryPatching;
-import parser.FusionTablesSqlParser;
 import util.Op;
 
 import java.awt.*; //for layout managers and more
 import java.awt.event.*; //for action events
 import java.util.HashMap;
-import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -52,8 +48,9 @@ public class Gui extends JPanel implements ActionListener, Observer {
 	private JTextField textFieldInf;
 
 	final DefaultHighlighter highlighter = new DefaultHighlighter();
-	final Highlighter.HighlightPainter painter = new UnderlineHighlightPainter(Color.red);
-
+	final Highlighter.HighlightPainter syntaxErrorPainter = new UnderlineHighlightPainter(Color.red);
+	final Highlighter.HighlightPainter semanticErrorPainter = new UnderlineHighlightPainter(Color.blue);
+	
 	KeyboardActions keyActions = new KeyboardActions();
 
 	private final ActionListener controller;
@@ -362,10 +359,16 @@ public class Gui extends JPanel implements ActionListener, Observer {
 		if (!Op.in(e.type, SyntaxElementType.error, SyntaxElementType.errorInfo, SyntaxElementType.unknown))
 			queryTextDoc.setCharacterAttributes(e.from, e.value.length(), getStyle(e.type), replaceAttributes);
 		if (e.type == SyntaxElementType.error)
-			try {
-				highlighter.addHighlight(e.from, e.from + e.value.length(), painter);
-			} catch (BadLocationException e1) {
-			}
+			underline(e, syntaxErrorPainter);
+		else if (e.hasSemanticError())
+			underline(e, semanticErrorPainter);
+	}
+
+	private void underline(SyntaxElement e, HighlightPainter p) {
+		try {
+			highlighter.addHighlight(e.from, e.from + e.value.length(), p);
+		} catch (BadLocationException ex) {
+		}
 	}
 
 	private JScrollPane createQueryText() {
