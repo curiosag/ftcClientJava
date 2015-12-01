@@ -1,4 +1,6 @@
 package ftcClientJava;
+
+import java.awt.Component;
 import java.awt.GridLayout;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -16,6 +18,8 @@ import javax.swing.event.ListSelectionListener;
 
 import com.google.common.base.Optional;
 
+import cg.common.check.Check;
+import gc.common.structures.IntTuple;
 import interfacing.AbstractCompletion;
 import interfacing.Completions;
 
@@ -23,7 +27,7 @@ public class CompletionPicker extends JPanel implements ListSelectionListener, W
 	private static final long serialVersionUID = -7917062917946392736L;
 
 	private Optional<Item> itemSelected = Optional.absent();
-	
+
 	private final ItemChosenHandler onItemChosen;
 
 	private static class Item {
@@ -32,8 +36,9 @@ public class CompletionPicker extends JPanel implements ListSelectionListener, W
 
 		Item(AbstractCompletion value, Item[] subitems) {
 			this.value = value;
-			for (Item subitem : subitems)
-				this.subitems.addElement(subitem);
+			if (subitems != null)
+				for (Item subitem : subitems)
+					this.subitems.addElement(subitem);
 		}
 
 		public String toString() {
@@ -83,14 +88,18 @@ public class CompletionPicker extends JPanel implements ListSelectionListener, W
 
 	}
 
-	private static CompletionPicker createCompletions(List<AbstractCompletion> completions, ItemChosenHandler onItemChosen) {
+	private static CompletionPicker createCompletions(List<AbstractCompletion> completions,
+			ItemChosenHandler onItemChosen) {
 		CompletionPicker p = new CompletionPicker(onItemChosen);
 		for (AbstractCompletion c : completions)
 			p.addItem(c, toArray(c.children));
 		return p;
 	}
 
-	public static void show(Completions completions, ItemChosenHandler onItemChosen) {
+	public static void show(Completions completions, ItemChosenHandler onItemChosen, IntTuple xy) {
+		Check.notNull(xy);
+		Check.notNull(completions);
+		
 		JFrame frame = new JFrame("Nested Lists");
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		CompletionPicker c = createCompletions(completions.getAll(), onItemChosen);
@@ -99,6 +108,8 @@ public class CompletionPicker extends JPanel implements ListSelectionListener, W
 		frame.addWindowListener(c);
 		frame.addKeyListener(c);
 		frame.pack();
+		if (xy.i1 > 0 && xy.i2 > 0)
+			frame.setLocation(xy.i1, xy.i2);
 		frame.setVisible(true);
 	}
 
@@ -108,17 +119,16 @@ public class CompletionPicker extends JPanel implements ListSelectionListener, W
 			onItemChosen.onItemChosen(itemSelected.get().value);
 	}
 
-	
 	@Override
 	public void windowOpened(WindowEvent e) {
 		select(itemListDisplay, 0);
 	}
 
-	private void select(@SuppressWarnings("rawtypes") JList l, int index){
+	private void select(@SuppressWarnings("rawtypes") JList l, int index) {
 		if (index < l.getModel().getSize())
 			l.setSelectionInterval(index, index);
 	}
-	
+
 	@Override
 	public void keyReleased(KeyEvent e) {
 		int keycode = e.getKeyCode();
@@ -130,7 +140,7 @@ public class CompletionPicker extends JPanel implements ListSelectionListener, W
 			break;
 		case KeyEvent.KEY_LOCATION_LEFT:
 			select(itemListDisplay, itemListDisplay.getSelectedIndex() >= 0 ? itemListDisplay.getSelectedIndex() : 0);
-			break;	
+			break;
 		default:
 		}
 

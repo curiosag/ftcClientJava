@@ -5,12 +5,13 @@ import java.util.Observer;
 
 import javax.swing.text.Document;
 
+import ftcQueryEditor.FtcAutoComplete;
 import interfacing.TableInfo;
 import manipulations.QueryPatching;
 
 public class Client {
 
-	private static void interlace(Document d, Observer textModelObserver, TextModel m){
+	private static void interlace(Document d, Observer textModelObserver, TextModel m) {
 		d.addDocumentListener(m.getListener());
 		m.addObserver(textModelObserver);
 	}
@@ -18,7 +19,7 @@ public class Client {
 	private static Runnable startup() {
 		ftcClientModel model = new ftcClientModel();
 		ftcClientController controller = new ftcClientController(model);
-		DataEngine eng = new DataEngine(){
+		DataEngine eng = new DataEngine() {
 
 			@Override
 			public List<TableInfo> getTableList(boolean addDetails) {
@@ -28,8 +29,9 @@ public class Client {
 			@Override
 			public QueryPatching getPatcher(String query, int cursorPos) {
 				return controller.getPatcher(query, cursorPos);
-			}};
-		
+			}
+		};
+
 		return new Runnable() {
 
 			@Override

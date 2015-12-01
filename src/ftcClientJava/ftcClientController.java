@@ -16,6 +16,8 @@ import cg.common.misc.CmdDestination;
 import cg.common.misc.CmdHistory;
 import fusiontables.AuthInfo;
 import fusiontables.FusionTablesConnector;
+import interfacing.AbstractCompletion;
+import interfacing.Completions;
 import interfacing.SyntaxElement;
 import interfacing.SyntaxElementSource;
 import interfacing.TableInfo;
@@ -144,6 +146,11 @@ public class ftcClientController implements ActionListener, SyntaxElementSource 
 	@Override
 	public List<SyntaxElement> get(String query) {
 		return queryHandler.getHighlighting(query);
+	}
+
+	@Override
+	public Completions get(String query, int cursorPos) {
+		return queryHandler.getPatcher(query, cursorPos).getCompletions();
 	}
 
 }

@@ -22,7 +22,7 @@ where Company matches('T.*') öüö
 select Company from wiki_cpdata
 where Company matches('T') öüö
 select Company from wiki_cpdata
-where Company contains('T') ö������������������������������������������������������������ö
+where Company contains('T') ö��������������������������������������������������������������ö
 select Company from wiki_cpdata öüö
 select Company from wiki_cpdata
 
@@ -263,4 +263,6 @@ from vvFuetterungenB
 GROUP BY mengeB, id ORDER BY id DESC; öüö
 select a.jobwohnen from v1 as a öüö
 select a.jobwohnen from v1 as a; öüö
+select uhrzeit
+FROM FuetterungenA; öüö
 
