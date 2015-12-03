@@ -1,8 +1,8 @@
 package ftcClientJava;
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import interfacing.AbstractCompletion;
-import interfacing.Completions;
+import structures.AbstractCompletion;
+import structures.Completions;
 
 public class ToTreeData {
 	

@@ -5,9 +5,15 @@ import java.util.Observer;
 
 import javax.swing.text.Document;
 
-import ftcQueryEditor.FtcAutoComplete;
-import interfacing.TableInfo;
+import com.google.common.base.Optional;
+
+import cg.common.core.SystemLogger;
+import fusiontables.AuthInfo;
+import fusiontables.FusionTablesConnector;
+import interfaces.Connector;
 import manipulations.QueryPatching;
+import structures.TableInfo;
+import test.MockConnector;
 
 public class Client {
 
@@ -16,9 +22,25 @@ public class Client {
 		m.addObserver(textModelObserver);
 	}
 
+	private final static SystemLogger logging = new SystemLogger();
+
+	
+	@SuppressWarnings("unused")
+	private static Connector getConnector()
+	{
+		if (false)
+			return 	new FusionTablesConnector(logging,
+					Optional.of(new AuthInfo("1002359378366-ipnetharogqs3pmhf9q35ov4m14l6014.apps.googleusercontent.com",
+							"wJWwr-FbTNtyCLhHvXE5mCo6")));
+		else
+			return MockConnector.instance();
+
+	}
+	
 	private static Runnable startup() {
 		ftcClientModel model = new ftcClientModel();
-		ftcClientController controller = new ftcClientController(model);
+		ftcClientController controller = new ftcClientController(model, logging, getConnector());
+		
 		DataEngine eng = new DataEngine() {
 
 			@Override

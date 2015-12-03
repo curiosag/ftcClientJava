@@ -5,42 +5,31 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 
 import javax.swing.JEditorPane;
 
-import com.google.common.base.Optional;
-
+import cg.common.check.Check;
+import cg.common.core.AbstractLogger;
 import cg.common.core.Logging;
 import cg.common.io.FileStringStorage;
 import cg.common.misc.CmdDestination;
 import cg.common.misc.CmdHistory;
-import fusiontables.AuthInfo;
-import fusiontables.FusionTablesConnector;
-import interfacing.AbstractCompletion;
-import interfacing.Completions;
-import interfacing.SyntaxElement;
-import interfacing.SyntaxElementSource;
-import interfacing.TableInfo;
+import interfaces.Connector;
+import interfaces.SyntaxElementSource;
+import interfaces.SyntaxElement;
 import manipulations.QueryHandler;
 import manipulations.QueryPatching;
+import structures.Completions;
+import structures.TableInfo;
 
 public class ftcClientController implements ActionListener, SyntaxElementSource {
 	private static final String historyStore = "./commandHistory.txt";
 
-	ftcClientModel model;
-
-	private Logging logging = new Logging() {
-
-		@Override
-		public void Info(String info) {
-			model.infoText.setValue(info);
-		}
-
-		@Override
-		public void Error(String error) {
-			model.errorText.setValue(error);
-		}
-	};
+	public final ftcClientModel model;
+	private final QueryHandler queryHandler;
+	private final AbstractLogger logging;
 
 	private CmdHistory history = new CmdHistory(new FileStringStorage(historyStore));
 	private final CmdDestination historyScrollDestination = new CmdDestination() {
@@ -49,16 +38,29 @@ public class ftcClientController implements ActionListener, SyntaxElementSource 
 			model.queryText.setValue(cmd);
 		}
 	};
-
-	private final FusionTablesConnector connector = new FusionTablesConnector(logging,
-			Optional.of(new AuthInfo("1002359378366-ipnetharogqs3pmhf9q35ov4m14l6014.apps.googleusercontent.com",
-					"wJWwr-FbTNtyCLhHvXE5mCo6")));
-
-	private QueryHandler queryHandler = new QueryHandler(logging, connector);
-
-	public ftcClientController(ftcClientModel model) {
+	
+	public ftcClientController(ftcClientModel model, AbstractLogger logging, Connector connector) {
 		this.model = model;
+		this.queryHandler = new QueryHandler(logging, connector);
+		this.logging = logging;
+		
 		model.resultText.setValue(getUsageInfo());
+		
+		setupLogging();
+	}
+
+	private void setupLogging() {
+		logging.addObserver(new Observer(){
+
+			@Override
+			public void update(Observable o, Object arg) {
+				Check.isTrue(o instanceof Logging);
+				Logging logging = (Logging) o;
+				if (logging.lastError().isPresent()) 
+					model.errorText.setValue(logging.lastError().get());
+				if (logging.lastInfo().isPresent()) 
+					model.infoText.setValue(logging.lastInfo().get());
+			}});
 	}
 
 	public List<TableInfo> getTableList(boolean addDetails) {

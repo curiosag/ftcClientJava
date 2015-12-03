@@ -53,13 +53,13 @@ import ftcClientJava.ItemChosenHandler;
 import ftcClientJava.ToTreeData;
 import ftcClientJava.UnderlineHighlightPainter;
 import gc.common.structures.IntTuple;
-import interfacing.AbstractCompletion;
-import interfacing.SqlCompletionType;
-import interfacing.SyntaxElement;
-import interfacing.SyntaxElementSource;
-import interfacing.SyntaxElementType;
+import interfaces.SqlCompletionType;
+import interfaces.SyntaxElementSource;
+import interfaces.SyntaxElement;
+import interfaces.SyntaxElementType;
 import manipulations.CursorContext;
 import manipulations.QueryPatching;
+import structures.AbstractCompletion;
 import util.Op;
 
 public class QueryEditor extends JPanel implements SyntaxConstants {
@@ -262,10 +262,10 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 	}
 
 	private void selectNextReplacementTag(int startFrom) {
-		int beginTagPos = queryText.getText().indexOf(interfacing.Const.replacementTagBegin, startFrom);
-		int endTagPos = queryText.getText().indexOf(interfacing.Const.replacementTagEnd, beginTagPos);
+		int beginTagPos = queryText.getText().indexOf(structures.Const.replacementTagBegin, startFrom);
+		int endTagPos = queryText.getText().indexOf(structures.Const.replacementTagEnd, beginTagPos);
 		if (beginTagPos > 0 && endTagPos > 0) {
-			endTagPos = endTagPos + interfacing.Const.replacementTagBegin.length();
+			endTagPos = endTagPos + structures.Const.replacementTagBegin.length();
 
 			// queryText.setCaretPosition(beginTagPos); set by select to end of
 			// selection

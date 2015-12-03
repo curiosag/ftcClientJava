@@ -2,8 +2,8 @@ package ftcClientJava;
 
 import java.util.List;
 
-import interfacing.TableInfo;
 import manipulations.QueryPatching;
+import structures.TableInfo;
 
 public interface DataEngine {
 	

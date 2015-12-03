@@ -48,9 +48,9 @@ import javax.swing.tree.TreeSelectionModel;
 import com.google.common.base.Optional;
 
 import cg.common.check.Check;
-import interfacing.AbstractCompletion;
-import interfacing.ModelElementCompletion;
-import interfacing.SqlCompletionType;
+import interfaces.SqlCompletionType;
+import structures.AbstractCompletion;
+import structures.ModelElementCompletion;
 
 /**
  * 

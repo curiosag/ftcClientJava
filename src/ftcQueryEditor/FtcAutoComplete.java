@@ -15,7 +15,7 @@ import org.fife.ui.autocomplete.ShorthandCompletion;
 import org.fife.ui.autocomplete.TemplateCompletion;
 import org.fife.ui.autocomplete.ParameterizedCompletion.Parameter;
 
-import interfacing.SyntaxElementSource;
+import interfaces.SyntaxElementSource;
 
 public class FtcAutoComplete {
 
@@ -60,7 +60,7 @@ public class FtcAutoComplete {
 		subs.add(new BasicCompletion(provider, "b"));
 		subs.add(new BasicCompletion(provider, "s2"));
 		subs.add(new BasicCompletion(provider, "s3"));
-		provider.addCompletion(new BasicCompletion(provider, "s", subs));
+		provider.addCompletion(new BasicCompletion(provider, "s", "",subs));
 		
 		// Add completions for all Java keywords. A BasicCompletion is just
 		// a straightforward word completion.

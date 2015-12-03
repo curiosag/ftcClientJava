@@ -8,15 +8,17 @@ import javax.swing.text.JTextComponent;
 
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.Completion;
+import org.fife.ui.autocomplete.CompletionProvider;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
 import org.fife.ui.autocomplete.ParameterizedCompletion;
+import org.fife.ui.autocomplete.SqlElementCompletion;
 
 import com.google.common.base.Optional;
 
 import gc.common.structures.OrderedIntTuple;
-import interfacing.AbstractCompletion;
-import interfacing.Completions;
-import interfacing.SyntaxElementSource;
+import interfaces.SyntaxElementSource;
+import structures.AbstractCompletion;
+import structures.Completions;
 import util.StringUtil;
 
 public class FtcCompletionProvider extends DefaultCompletionProvider {
@@ -68,7 +70,6 @@ public class FtcCompletionProvider extends DefaultCompletionProvider {
 	private void resetCompletions(JTextComponent comp) {
 		String text = comp.getText();
 		int caretPosition = comp.getCaretPosition();
-
 		if (caretPosition == recentCaretPosition && StringUtil.nullableEqual(text, recentText))
 			return;
 		else {
@@ -77,27 +78,8 @@ public class FtcCompletionProvider extends DefaultCompletionProvider {
 
 			clear();
 			for (AbstractCompletion c : externalCompletions.getAll())
-				addExternalCompletion(c);
+				addCompletion(new SqlElementCompletion(this, c));
 		}
-	}
-
-	private void addExternalCompletion(AbstractCompletion c) {
-		addCompletion(getExternalCompletion(c));
-	}
-
-	private Completion getExternalCompletion(AbstractCompletion c) {
-		String shortDesc = c.displayName;
-		String replacementText = Completions.patchFromCompletion(c);
-		return new BasicCompletion(this, replacementText, shortDesc, getSubCompletions(c.children));
-	}
-
-	private List<Completion> getSubCompletions(List<AbstractCompletion> children) {
-		List<Completion> result = new LinkedList<Completion>();
-
-		for (AbstractCompletion c : children)
-			result.add(getExternalCompletion(c));
-
-		return result;
 	}
 
 }

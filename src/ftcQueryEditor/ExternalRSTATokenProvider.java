@@ -2,7 +2,7 @@ package ftcQueryEditor;
 
 import java.util.List;
 
-import interfacing.SyntaxElement;
+import interfaces.SyntaxElement;
 
 
 public interface ExternalRSTATokenProvider {

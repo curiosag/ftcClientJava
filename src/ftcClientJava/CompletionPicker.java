@@ -20,8 +20,8 @@ import com.google.common.base.Optional;
 
 import cg.common.check.Check;
 import gc.common.structures.IntTuple;
-import interfacing.AbstractCompletion;
-import interfacing.Completions;
+import structures.AbstractCompletion;
+import structures.Completions;
 
 public class CompletionPicker extends JPanel implements ListSelectionListener, WindowListener, KeyListener {
 	private static final long serialVersionUID = -7917062917946392736L;

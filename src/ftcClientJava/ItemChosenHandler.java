@@ -1,5 +1,5 @@
 package ftcClientJava;
-import interfacing.AbstractCompletion;
+import structures.AbstractCompletion;
 
 public interface ItemChosenHandler {
 
