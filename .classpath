@@ -11,7 +11,6 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" kind="src" path="/ftc-cmdline-sample"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JavaCommon"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ftcSql"/>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
@@ -30,5 +29,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/bobbyLightAutocomplete"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/bobbyLightRSyntaxTextArea"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ftcShared"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ftc-cmdline_sample"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

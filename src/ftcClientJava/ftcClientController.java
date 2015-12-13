@@ -16,6 +16,7 @@ import cg.common.core.Logging;
 import cg.common.io.FileStringStorage;
 import cg.common.misc.CmdDestination;
 import cg.common.misc.CmdHistory;
+import interfaces.CompletionsSource;
 import interfaces.Connector;
 import interfaces.SyntaxElementSource;
 import interfaces.SyntaxElement;
@@ -24,7 +25,7 @@ import manipulations.QueryPatching;
 import structures.Completions;
 import structures.TableInfo;
 
-public class ftcClientController implements ActionListener, SyntaxElementSource {
+public class ftcClientController implements ActionListener, SyntaxElementSource, CompletionsSource {
 	private static final String historyStore = "./commandHistory.txt";
 
 	public final ftcClientModel model;

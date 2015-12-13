@@ -4,11 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.AbstractAction;
@@ -23,15 +22,9 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
-import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Document;
 import javax.swing.text.Highlighter;
-import javax.swing.text.Style;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
 import javax.swing.text.Highlighter.HighlightPainter;
-import javax.swing.tree.DefaultMutableTreeNode;
-
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMakerFactory;
 import org.fife.ui.rsyntaxtextarea.ErrorStrip;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -42,47 +35,38 @@ import org.fife.ui.rsyntaxtextarea.TokenMakerFactory;
 import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
-import com.google.common.base.Optional;
-
 import cg.common.check.Check;
-import cg.common.interfaces.AbstractKeyListener;
-import ftcClientJava.CompletionPicker;
+import cg.common.swing.UnderlineHighlightPainter;
 import ftcClientJava.Const;
-import ftcClientJava.DataEngine;
-import ftcClientJava.ItemChosenHandler;
-import ftcClientJava.ToTreeData;
-import ftcClientJava.UnderlineHighlightPainter;
 import gc.common.structures.IntTuple;
-import interfaces.SqlCompletionType;
+import interfaces.CompletionsSource;
 import interfaces.SyntaxElementSource;
 import interfaces.SyntaxElement;
 import interfaces.SyntaxElementType;
-import manipulations.CursorContext;
 import manipulations.QueryPatching;
-import structures.AbstractCompletion;
-import util.Op;
 
 public class QueryEditor extends JPanel implements SyntaxConstants {
+
 	private static final long serialVersionUID = 1L;
 
 	private RTextScrollPane scrollPane;
 	public RSyntaxTextArea queryText;
 
-	final DefaultHighlighter highlighter = new RSyntaxTextAreaHighlighter();
-	final Highlighter.HighlightPainter syntaxErrorPainter = new UnderlineHighlightPainter(Color.red);
-	final Highlighter.HighlightPainter semanticErrorPainter = new UnderlineHighlightPainter(Color.blue);
-
 	private final SyntaxElementSource syntaxElementSource;
-	
-	public QueryEditor(SyntaxElementSource syntaxElementSource) {
+	private final CompletionsSource completionsSource;
+
+	public QueryEditor(SyntaxElementSource syntaxElementSource, CompletionsSource completionsSource) {
 		Check.notNull(syntaxElementSource);
-	
+
 		this.syntaxElementSource = syntaxElementSource;
-	
+		this.completionsSource = completionsSource;
+
 		queryText = createTextArea();
 		queryText.setSyntaxEditingStyle(SYNTAX_STYLE_NONE);
-		queryText.setHighlighter(highlighter);
-
+		queryText.addParser(new GftParser(syntaxElementSource));
+		
+		queryText.setParserDelay(10);
+		
 		scrollPane = new RTextScrollPane(queryText, true);
 		Gutter gutter = scrollPane.getGutter();
 		gutter.setBookmarkingEnabled(true);
@@ -95,36 +79,12 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 
 		add(errorStrip, BorderLayout.LINE_END);
 
-		highlighter.setDrawsLayeredHighlights(false);
-
-		setUpdateListener();
 		setCompletionProvider();
 		setTokenMaker();
 	}
 
 	private void setCompletionProvider() {
-		new FtcAutoComplete(syntaxElementSource).install(queryText);
-	}
-
-	private void setUpdateListener() {
-		queryText.getDocument().addDocumentListener(new DocumentListener() {
-
-			@Override
-			public void insertUpdate(DocumentEvent e) {
-
-				updateQueryTextHighlighting();
-			}
-
-			@Override
-			public void removeUpdate(DocumentEvent e) {
-				updateQueryTextHighlighting();
-			}
-
-			@Override
-			public void changedUpdate(DocumentEvent e) {
-				updateQueryTextHighlighting();
-			}
-		});
+		new FtcAutoComplete(completionsSource).install(queryText);
 	}
 
 	private void setTokenMaker() {
@@ -189,34 +149,6 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 		return queryText;
 	}
 
-	public void updateQueryTextHighlighting() {
-		clearStyles();
-		List<SyntaxElement> highlightings = syntaxElementSource.get(queryText.getText());
-		if (highlightings.size() > 0) {
-			for (SyntaxElement e : highlightings)
-				underline(e);
-			highlighter.paint(queryText.getGraphics());
-		}
-	}
-
-	private void clearStyles() {
-		highlighter.removeAllHighlights();
-	}
-
-	private void underline(SyntaxElement e) {
-		if (e.type == SyntaxElementType.error)
-			underline(e, syntaxErrorPainter);
-		else if (e.hasSemanticError())
-			underline(e, semanticErrorPainter);
-	}
-
-	private void underline(SyntaxElement e, HighlightPainter p) {
-		try {
-			highlighter.addHighlight(e.from, e.from + e.value.length() - 1, p);
-		} catch (BadLocationException ex) {
-		}
-	}
-
 	public void reSetCursor(QueryPatching patcher) {
 		if (patcher.newCursorPosition.isPresent())
 			queryText.setCaretPosition(patcher.newCursorPosition.get());
@@ -226,14 +158,6 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 
 	public String getText() {
 		return queryText.getText();
-	}
-
-	public void autocomplete() {
-
-		int cursorPos = queryText.getCaretPosition();
-		String query = queryText.getText();
-	//TODO	QueryPatching patcher = dataEngine.getPatcher(query, cursorPos);
-		//TODO	chooseReplacement(patcher);
 	}
 
 	private IntTuple getCaretCoord() {
@@ -254,18 +178,11 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 		return IntTuple.instance(x, y);
 	}
 
-	private void hdlOnItemChosen(QueryPatching patcher, AbstractCompletion item) {
-		queryText.setText(patcher.patch(item));
-		reSetCursor(patcher);
-		updateQueryTextHighlighting();
-		selectNextReplacementTag(0);
-	}
-
 	private void selectNextReplacementTag(int startFrom) {
-		int beginTagPos = queryText.getText().indexOf(structures.Const.replacementTagBegin, startFrom);
-		int endTagPos = queryText.getText().indexOf(structures.Const.replacementTagEnd, beginTagPos);
+		int beginTagPos = queryText.getText().indexOf(uglySmallThings.Const.replacementTagBegin, startFrom);
+		int endTagPos = queryText.getText().indexOf(uglySmallThings.Const.replacementTagEnd, beginTagPos);
 		if (beginTagPos > 0 && endTagPos > 0) {
-			endTagPos = endTagPos + structures.Const.replacementTagBegin.length();
+			endTagPos = endTagPos + uglySmallThings.Const.replacementTagBegin.length();
 
 			// queryText.setCaretPosition(beginTagPos); set by select to end of
 			// selection
@@ -273,39 +190,6 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 
 		} else if (startFrom > 0)
 			selectNextReplacementTag(0);
-	}
-
-	private void chooseReplacement(QueryPatching patcher) {
-
-		CursorContext context = patcher.cursorContext;
-		SqlCompletionType contextType = context.getModelElementType();
-
-		Optional<String> selectionPrefix = getSelectionPrefix(context, contextType);
-		DefaultMutableTreeNode content = getSelectionContent(patcher);
-		if (content != null)
-			CompletionPicker.show(patcher.getCompletions(), new ItemChosenHandler() {
-				@Override
-				public void onItemChosen(AbstractCompletion item) {
-					hdlOnItemChosen(patcher, item);
-				}
-			}, getCaretCoord());
-
-		// if (content != null)
-		// TreeNamePicker.show(content, selectionPrefix, new ItemChosenHandler()
-		// {
-		// @Override
-		// public void onItemChosen(AbstractCompletion item) {
-		// hdlOnItemChosen(patcher, item);
-		// }
-		// });
-	}
-
-	private DefaultMutableTreeNode getSelectionContent(QueryPatching patcher) {
-		return ToTreeData.fromCompletions("possible ways from here", patcher.getCompletions());
-	}
-
-	private Optional<String> getSelectionPrefix(CursorContext context, SqlCompletionType contextType) {
-		return contextType == SqlCompletionType.table ? context.name : context.otherName;
 	}
 
 	private class BookmarksAction extends AbstractAction {
@@ -425,7 +309,7 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
-				QueryEditor e = new QueryEditor(null);
+				QueryEditor e = new QueryEditor(null, null);
 				e.setSize(600, 400);
 				e.setVisible(true);
 			}

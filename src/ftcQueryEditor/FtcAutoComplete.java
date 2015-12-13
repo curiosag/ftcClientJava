@@ -1,11 +1,11 @@
 package ftcQueryEditor;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.text.JTextComponent;
 
-import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.Completion;
 import org.fife.ui.autocomplete.CompletionProvider;
@@ -13,34 +13,81 @@ import org.fife.ui.autocomplete.DefaultCompletionProvider;
 import org.fife.ui.autocomplete.ParameterChoicesProvider;
 import org.fife.ui.autocomplete.ShorthandCompletion;
 import org.fife.ui.autocomplete.TemplateCompletion;
-import org.fife.ui.autocomplete.ParameterizedCompletion.Parameter;
 
-import interfaces.SyntaxElementSource;
+import org.fife.ui.autocomplete.ParameterizedCompletion.Parameter;
+import org.fife.ui.autocomplete.RoundRobinAutoCompletion;
+
+import interfaces.SqlCompletionType;
+import uglySmallThings.Const;
+import interfaces.CompletionsSource;
+import util.Op;
 
 public class FtcAutoComplete {
 
-	private final CompletionProvider provider;
-	private final AutoCompletion ac;
-	private final SyntaxElementSource syntaxElementSource;
-	
-	public FtcAutoComplete(SyntaxElementSource syntaxElementSource){
-		this.syntaxElementSource = syntaxElementSource;
+	private final FtcCompletionProvider schemaElementProvider;
+	private final FtcCompletionProvider nonSchemaElementProvider;
+
+	private RoundRobinAutoCompletion ac = null;
+
+	private final SqlCompletionType[] schemaElementTypes = { SqlCompletionType.table, SqlCompletionType.column };
+	private final SqlCompletionType[] nonSchemaElementTypes = getNonSchemaElements();
+
+	private final static List<Completion> emptyCompletions = new LinkedList<Completion>();
+
+	public FtcAutoComplete(CompletionsSource completionsSource) {
+
+		schemaElementProvider = new FtcCompletionProvider(completionsSource, schemaElementTypes);
+		nonSchemaElementProvider = new FtcCompletionProvider(completionsSource, nonSchemaElementTypes);
+
+//		ac = new AutoCompletion(createCompletionProvider());
+//		ac.setAutoCompleteEnabled(true);
+//		ac.setParameterAssistanceEnabled(true);
 		
-		provider = new FtcCompletionProvider(syntaxElementSource); //createCompletionProvider();
-		
-		ac = new AutoCompletion(provider);
-		ac.setParameterAssistanceEnabled(false);
-		
+		ac = new RoundRobinAutoCompletion(schemaElementProvider);
+		ac.addCompletionProvider(nonSchemaElementProvider);
+
+		ac.setParameterAssistanceEnabled(true);
+		ac.setAutoCompleteEnabled(true);
+
+		ParameterChoicesProvider pcp = new ParameterChoicesProvider() {
+
+			@Override
+			public List<Completion> getParameterChoices(JTextComponent tc, Parameter param) {
+
+				List<Completion> result;
+				
+				if (canPopulate(param.getName()))
+					result = new FtcCompletionProvider(completionsSource).getParameterCompletions(tc);
+				else
+					result = emptyCompletions;
+				
+				return result;
+			}
+
+			private boolean canPopulate(String name) {
+				return Op.in(name, Const.paramNameTable, Const.paramNameColumn);
+			}
+		};
+
+		nonSchemaElementProvider.setParameterChoicesProvider(pcp);
+
 	}
-	
+
 	public void install(JTextComponent c) {
 		ac.install(c);
 	}
 
 	private CompletionProvider createCompletionProvider() {
 
-		final DefaultCompletionProvider provider = new FtcCompletionProvider(syntaxElementSource);
-		ParameterChoicesProvider pcp = new ParameterChoicesProvider(){
+		// A DefaultCompletionProvider is the simplest concrete implementation
+		// of CompletionProvider. This provider has no understanding of
+		// language semantics. It simply checks the text entered up to the
+		// caret position for a match against known completions. This is all
+		// that is needed in the majority of cases.
+
+		final DefaultCompletionProvider provider = new DefaultCompletionProvider();
+
+		ParameterChoicesProvider pcp = new ParameterChoicesProvider() {
 
 			@Override
 			public List<Completion> getParameterChoices(JTextComponent tc, Parameter param) {
@@ -49,27 +96,27 @@ public class FtcAutoComplete {
 				p.add(new BasicCompletion(provider, "p2"));
 				p.add(new BasicCompletion(provider, "p3"));
 				return p;
-			}};
-			
+			}
+		};
+
 		provider.setParameterChoicesProvider(pcp);
-		
+
 		ArrayList<Completion> subs = new ArrayList<Completion>();
-		
-		
-		subs.add(new TemplateCompletion(provider, "x", "forlp", "for (int ${i} = 0; ${i} &lt; ${array}.length; ${i}++)"));	
+
+		subs.add(new TemplateCompletion(provider, "xX", "forlp",
+				"for (int ${i} = 0; ${i} &lt; ${array}.length; ${i}++)"));
 		subs.add(new BasicCompletion(provider, "b"));
 		subs.add(new BasicCompletion(provider, "s2"));
 		subs.add(new BasicCompletion(provider, "s3"));
-		provider.addCompletion(new BasicCompletion(provider, "s", "",subs));
-		
+		provider.addCompletion(new BasicCompletion(provider, "s", "", subs));
+
 		// Add completions for all Java keywords. A BasicCompletion is just
 		// a straightforward word completion.
-		TemplateCompletion tc = new TemplateCompletion(provider, "x", "x", "for (int ${i} = 0; ${i} &lt; ${array}.length; ${i}++)");
-		
+		TemplateCompletion tc = new TemplateCompletion(provider, "y", "y",
+				"for (int ${i} = 0; ${i} &lt; ${array}.length; ${i}++)");
+
 		provider.addCompletion(tc);
-		
-		
-		
+
 		provider.addCompletion(new BasicCompletion(provider, "assert"));
 		provider.addCompletion(new BasicCompletion(provider, "break"));
 		provider.addCompletion(new BasicCompletion(provider, "case"));
@@ -91,5 +138,13 @@ public class FtcAutoComplete {
 
 	}
 
-	
+	private SqlCompletionType[] getNonSchemaElements() {
+		SqlCompletionType[] v = SqlCompletionType.values();
+		List<SqlCompletionType> result = new LinkedList<SqlCompletionType>();
+		for (SqlCompletionType t : v)
+			if (!Op.in(t, schemaElementTypes))
+				result.add(t);
+		return result.toArray(new SqlCompletionType[result.size()]);
+	}
+
 }

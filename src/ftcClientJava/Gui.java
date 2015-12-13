@@ -4,15 +4,13 @@ import javax.swing.*;
 import javax.swing.text.Document;
 import cg.common.check.Check;
 import cg.common.interfaces.AbstractKeyListener;
-import ftcQueryEditor.ExternalRSTATokenProvider;
-import ftcQueryEditor.Global;
+
 import ftcQueryEditor.QueryEditor;
 import interfaces.SyntaxElementSource;
-import interfaces.SyntaxElement;
+import interfaces.CompletionsSource;
 import manipulations.QueryHandler;
 import java.awt.*; 
 import java.awt.event.*;
-import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -32,22 +30,14 @@ public class Gui extends JFrame implements ActionListener, Observer {
 
 	private final ActionListener controller;
 	private final SyntaxElementSource higlightingInfo;
-	private final DataEngine dataEngine;
+	private final CompletionsSource completionsSource;
 
-	public Gui(ActionListener controller, DataEngine dataEngine, SyntaxElementSource higlightingInfo) {
+	public Gui(ActionListener controller, SyntaxElementSource higlightingInfo, CompletionsSource completionsSource) {
 		
-		this.dataEngine = dataEngine;
 		this.higlightingInfo = higlightingInfo;
+		this.completionsSource = completionsSource;
 		this.controller = controller;
-		
-		Global.externalTokenProvider = new ExternalRSTATokenProvider() {
-			
-			@Override
-			public List<SyntaxElement> getTokens(String query) {
-				return higlightingInfo.get(query);
-			}
-		};
-		
+				
 		buildGui();
 		addKeyboardActions();
 
@@ -71,16 +61,7 @@ public class Gui extends JFrame implements ActionListener, Observer {
 		keyActions.add(KeyEvent.VK_F3, 0, getAction(Const.listTables));
 		keyActions.add(KeyEvent.VK_F4, 0, getAction(Const.preview));
 		keyActions.add(KeyEvent.VK_F5, 0, getAction(Const.execSql));
-		keyActions.add(KeyEvent.VK_F11, 0, getAction(Const.oh));
-		
-		keyActions.add(KeyEvent.VK_F12, 0, new AbstractAction() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				queryEditor.autocomplete();
-			}
-		});	
+		keyActions.add(KeyEvent.VK_F11, 0, getAction(Const.oh));	
 	}
 
 	public void addQueryTextKeyListener(AbstractKeyListener k) {
@@ -121,7 +102,7 @@ public class Gui extends JFrame implements ActionListener, Observer {
 		JPanel buttonPane = createButtonArea();
 
 		JPanel leftPane = new JPanel(new BorderLayout());
-		queryEditor = new QueryEditor(higlightingInfo);
+		queryEditor = new QueryEditor(higlightingInfo, completionsSource);
 		leftPane.add(queryEditor, BorderLayout.PAGE_START);
 		leftPane.add(buttonPane, BorderLayout.CENTER);
 		leftPane.add(textControlsPane, BorderLayout.PAGE_END);
@@ -148,10 +129,10 @@ public class Gui extends JFrame implements ActionListener, Observer {
 		SwingUtilities.invokeLater(r);
 	}
 
-	static Gui createAndShowGUI(DataEngine dataEngine, ActionListener controller, SyntaxElementSource s) {
+	static Gui createAndShowGUI(ActionListener controller, SyntaxElementSource s, CompletionsSource c) {
 		UIManager.put("swing.boldMetal", Boolean.FALSE);
 
-		Gui result = new Gui(controller, dataEngine, s);
+		Gui result = new Gui(controller, s, c);
 		result.setSize(1800, 1500);
 		result.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		result.pack();

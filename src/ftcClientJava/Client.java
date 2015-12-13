@@ -8,8 +8,9 @@ import javax.swing.text.Document;
 import com.google.common.base.Optional;
 
 import cg.common.core.SystemLogger;
-import fusiontables.AuthInfo;
-import fusiontables.FusionTablesConnector;
+import main.java.fusiontables.AuthInfo;
+import main.java.fusiontables.FusionTablesConnector;
+
 import interfaces.Connector;
 import manipulations.QueryPatching;
 import structures.TableInfo;
@@ -58,7 +59,7 @@ public class Client {
 
 			@Override
 			public void run() {
-				Gui ui = Gui.createAndShowGUI(eng, controller, controller);
+				Gui ui = Gui.createAndShowGUI(controller, controller, controller);
 				
 				model.errorText.addObserver(ui.createErrorTextObserver());
 
