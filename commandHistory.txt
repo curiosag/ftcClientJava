@@ -22,7 +22,7 @@ where Company matches('T.*') öüö
 select Company from wiki_cpdata
 where Company matches('T') öüö
 select Company from wiki_cpdata
-where Company contains('T') ö��������������������������������������������������������������������ö
+where Company contains('T') ö����������������������������������������������������������������������ö
 select Company from wiki_cpdata öüö
 select Company from wiki_cpdata
 
@@ -86,7 +86,7 @@ select * from Fuetterungen
 rename 'View of Fuertterungen' to Fuetterungen; öüö
 alter table 'View of Fuertterungen' rename  to Fuetterungen; öüö
 alter table 'View of Fuetterungen' rename  to Fuetterungen; öüö
-alter table FuetterungenB rename  to vFuetterungen; öüö
+alter table FuetterungenB rename  to vFuetterungen; ��üö
 select * from vFuetterungen; ��üö
 select * from vFuetterungen öüö
 select * from Fuetterungen öüö
@@ -108,7 +108,7 @@ select * from FLeer; öüö
 alter table FLeer rename to FFLeer; öüö
 drop table FFLeer; öüö
 create view v as (select * from statData); öüö
-drop table v; öüö
+drop table v; ��üö
 select * from Fuetterungen; öüö
 create view v as (
 
@@ -251,7 +251,7 @@ from vvFuetterungenB
 GROUP BY mengeB; öüö
 select id, mengeB
 from vvFuetterungenB
-GROUP BY mengeB; öüö
+GROUP BY mengeB; ��üö
 select id, mengeB
 from vvFuetterungenB
 GROUP BY mengeB, Id; öüö
@@ -276,4 +276,6 @@ SELECT datum FROM combiview OFFSET 0 LIMIT 10; öüö
 SELECT datum,menge FROM combiview OFFSET 0 LIMIT 10; öüö
 SELECT 'Assets adjusted to the year 2012' FROM wiki_cpdata; öüö
 SELECT 'Filing court district' FROM wiki_cpdata; öüö
+INSERT INTO combiview (datumB, menge) 
+VALUES (4, 5); öüö
 

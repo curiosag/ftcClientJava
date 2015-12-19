@@ -29,6 +29,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/bobbyLightAutocomplete"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/bobbyLightRSyntaxTextArea"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ftcShared"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/ftc-cmdline_sample"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ftcConnector"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

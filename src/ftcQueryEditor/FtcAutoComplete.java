@@ -67,7 +67,7 @@ public class FtcAutoComplete {
 			}
 
 			private boolean canPopulate(String name) {
-				return Op.in(name, Const.paramNameTable, Const.paramNameColumn);
+				return name.equals(Const.paramNameTable) || name.startsWith(Const.paramNameColumn);
 			}
 		};
 

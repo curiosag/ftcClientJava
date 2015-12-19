@@ -64,6 +64,7 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 		queryText = createTextArea();
 		queryText.setSyntaxEditingStyle(SYNTAX_STYLE_NONE);
 		queryText.addParser(new GftParser(syntaxElementSource));
+		queryText.setMarkOccurrences(false);
 		
 		queryText.setParserDelay(100);
 		
