@@ -18,6 +18,7 @@ import org.fife.ui.autocomplete.ParameterizedCompletion.Parameter;
 import org.fife.ui.autocomplete.RoundRobinAutoCompletion;
 
 import interfaces.SqlCompletionType;
+import interfaces.SyntaxElementSource;
 import uglySmallThings.Const;
 import interfaces.CompletionsSource;
 import util.Op;
@@ -29,15 +30,16 @@ public class FtcAutoComplete {
 
 	private RoundRobinAutoCompletion ac = null;
 
-	private final SqlCompletionType[] schemaElementTypes = { SqlCompletionType.table, SqlCompletionType.column };
-	private final SqlCompletionType[] nonSchemaElementTypes = getNonSchemaElements();
+	private final static SqlCompletionType[] schemaElementTypes = { SqlCompletionType.table, SqlCompletionType.column };
+	private final static SqlCompletionType[] nonSchemaElementTypes = getNonSchemaElements();
+	private final static SqlCompletionType[] emptySchemaElementTypes = {};
 
 	private final static List<Completion> emptyCompletions = new LinkedList<Completion>();
 
-	public FtcAutoComplete(CompletionsSource completionsSource) {
+	public FtcAutoComplete(SyntaxElementSource syntaxElementSource, CompletionsSource completionsSource) {
 
-		schemaElementProvider = new FtcCompletionProvider(completionsSource, schemaElementTypes);
-		nonSchemaElementProvider = new FtcCompletionProvider(completionsSource, nonSchemaElementTypes);
+		schemaElementProvider = new FtcCompletionProvider(syntaxElementSource, completionsSource, schemaElementTypes);
+		nonSchemaElementProvider = new FtcCompletionProvider(syntaxElementSource, completionsSource, nonSchemaElementTypes);
 
 //		ac = new AutoCompletion(createCompletionProvider());
 //		ac.setAutoCompleteEnabled(true);
@@ -57,7 +59,7 @@ public class FtcAutoComplete {
 				List<Completion> result;
 				
 				if (canPopulate(param.getName()))
-					result = new FtcCompletionProvider(completionsSource).getParameterCompletions(tc);
+					result = new FtcCompletionProvider(syntaxElementSource, completionsSource, emptySchemaElementTypes).getParameterCompletions(tc);
 				else
 					result = emptyCompletions;
 				
@@ -126,7 +128,7 @@ public class FtcAutoComplete {
 		provider.addCompletion(new BasicCompletion(provider, "void"));
 		provider.addCompletion(new BasicCompletion(provider, "volatile"));
 		provider.addCompletion(new BasicCompletion(provider, "while"));
-
+		
 		// Add a couple of "shorthand" completions. These completions don't
 		// require the input text to be the same thing as the replacement text.
 		provider.addCompletion(
@@ -138,7 +140,7 @@ public class FtcAutoComplete {
 
 	}
 
-	private SqlCompletionType[] getNonSchemaElements() {
+	private static SqlCompletionType[] getNonSchemaElements() {
 		SqlCompletionType[] v = SqlCompletionType.values();
 		List<SqlCompletionType> result = new LinkedList<SqlCompletionType>();
 		for (SqlCompletionType t : v)

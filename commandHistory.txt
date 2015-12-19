@@ -22,7 +22,7 @@ where Company matches('T.*') öüö
 select Company from wiki_cpdata
 where Company matches('T') öüö
 select Company from wiki_cpdata
-where Company contains('T') ö��������������������������������������������������������������ö
+where Company contains('T') ö��������������������������������������������������������������������ö
 select Company from wiki_cpdata öüö
 select Company from wiki_cpdata
 
@@ -265,4 +265,15 @@ select a.jobwohnen from v1 as a öüö
 select a.jobwohnen from v1 as a; öüö
 select uhrzeit
 FROM FuetterungenA; öüö
+SELECT datum FROM combiview; öüö
+SELECT datum FROM coombiview; öüö
+SELECT datum FROM combiview; öüö
+SELECT daatum FROM combiview; öüö
+SELECT datum FROM combiview; öüö
+SELECT datum FROM combiview LIMIT 10; öüö
+SELECT datum FROM combiview OFFSET 0; öüö
+SELECT datum FROM combiview OFFSET 0 LIMIT 10; öüö
+SELECT datum,menge FROM combiview OFFSET 0 LIMIT 10; öüö
+SELECT 'Assets adjusted to the year 2012' FROM wiki_cpdata; öüö
+SELECT 'Filing court district' FROM wiki_cpdata; öüö
 

@@ -1,6 +1,5 @@
 package ftcClientJava;
 
-import java.util.List;
 import java.util.Observer;
 
 import javax.swing.text.Document;
@@ -12,8 +11,6 @@ import main.java.fusiontables.AuthInfo;
 import main.java.fusiontables.FusionTablesConnector;
 
 import interfaces.Connector;
-import manipulations.QueryPatching;
-import structures.TableInfo;
 import test.MockConnector;
 
 public class Client {
@@ -29,7 +26,7 @@ public class Client {
 	@SuppressWarnings("unused")
 	private static Connector getConnector()
 	{
-		if (false)
+		if (true)
 			return 	new FusionTablesConnector(logging,
 					Optional.of(new AuthInfo("1002359378366-ipnetharogqs3pmhf9q35ov4m14l6014.apps.googleusercontent.com",
 							"wJWwr-FbTNtyCLhHvXE5mCo6")));
@@ -41,19 +38,6 @@ public class Client {
 	private static Runnable startup() {
 		ftcClientModel model = new ftcClientModel();
 		ftcClientController controller = new ftcClientController(model, logging, getConnector());
-		
-		DataEngine eng = new DataEngine() {
-
-			@Override
-			public List<TableInfo> getTableList(boolean addDetails) {
-				return controller.getTableList(addDetails);
-			}
-
-			@Override
-			public QueryPatching getPatcher(String query, int cursorPos) {
-				return controller.getPatcher(query, cursorPos);
-			}
-		};
 
 		return new Runnable() {
 

@@ -65,7 +65,7 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 		queryText.setSyntaxEditingStyle(SYNTAX_STYLE_NONE);
 		queryText.addParser(new GftParser(syntaxElementSource));
 		
-		queryText.setParserDelay(10);
+		queryText.setParserDelay(100);
 		
 		scrollPane = new RTextScrollPane(queryText, true);
 		Gutter gutter = scrollPane.getGutter();
@@ -84,7 +84,7 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 	}
 
 	private void setCompletionProvider() {
-		new FtcAutoComplete(completionsSource).install(queryText);
+		new FtcAutoComplete(syntaxElementSource, completionsSource).install(queryText);
 	}
 
 	private void setTokenMaker() {
@@ -110,9 +110,11 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 		cbItem = new JCheckBoxMenuItem(new BookmarksAction());
 		cbItem.setSelected(true);
 		menu.add(cbItem);
-		cbItem = new JCheckBoxMenuItem(new MarkOccurrencesAction());
-		cbItem.setSelected(true);
-		menu.add(cbItem);
+		
+		// causes rather strange behavior
+//		cbItem = new JCheckBoxMenuItem(new MarkOccurrencesAction());
+//		cbItem.setSelected(false); 
+//		menu.add(cbItem);
 		cbItem = new JCheckBoxMenuItem(new TabLinesAction());
 		menu.add(cbItem);
 		menu.addSeparator();

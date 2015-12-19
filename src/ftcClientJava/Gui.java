@@ -29,12 +29,12 @@ public class Gui extends JFrame implements ActionListener, Observer {
 	KeyboardActions keyActions = new KeyboardActions();
 
 	private final ActionListener controller;
-	private final SyntaxElementSource higlightingInfo;
+	private final SyntaxElementSource syntaxElements;
 	private final CompletionsSource completionsSource;
 
-	public Gui(ActionListener controller, SyntaxElementSource higlightingInfo, CompletionsSource completionsSource) {
+	public Gui(ActionListener controller, SyntaxElementSource syntaxElements, CompletionsSource completionsSource) {
 		
-		this.higlightingInfo = higlightingInfo;
+		this.syntaxElements = syntaxElements;
 		this.completionsSource = completionsSource;
 		this.controller = controller;
 				
@@ -102,7 +102,7 @@ public class Gui extends JFrame implements ActionListener, Observer {
 		JPanel buttonPane = createButtonArea();
 
 		JPanel leftPane = new JPanel(new BorderLayout());
-		queryEditor = new QueryEditor(higlightingInfo, completionsSource);
+		queryEditor = new QueryEditor(syntaxElements, completionsSource);
 		leftPane.add(queryEditor, BorderLayout.PAGE_START);
 		leftPane.add(buttonPane, BorderLayout.CENTER);
 		leftPane.add(textControlsPane, BorderLayout.PAGE_END);

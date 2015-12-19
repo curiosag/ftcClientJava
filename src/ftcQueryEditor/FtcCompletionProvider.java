@@ -20,28 +20,30 @@ import cg.common.check.Check;
 import gc.common.structures.OrderedIntTuple;
 import interfaces.CompletionsSource;
 import interfaces.SqlCompletionType;
+import interfaces.SyntaxElement;
+import interfaces.SyntaxElementSource;
 import structures.AbstractCompletion;
 import structures.Completions;
 import util.Op;
 import util.StringUtil;
 
-public class FtcCompletionProvider extends DefaultCompletionProvider {
+public class FtcCompletionProvider extends DefaultCompletionProvider implements SyntaxElementSource {
 
-	private final CompletionsSource completionsSource;
+	public final CompletionsSource completionsSource;
+	public final SyntaxElementSource syntaxElementSource;
 	private final static List<Completion> noCompletions = new LinkedList<Completion>();
 	private Optional<OrderedIntTuple> replacementBoundaries = Optional.absent();
 	private SqlCompletionType[] completionTypes;
 
-	private static final SqlCompletionType[] schemaCompletions = {SqlCompletionType.table, SqlCompletionType.column};
+	private static final SqlCompletionType[] schemaCompletions = { SqlCompletionType.table, SqlCompletionType.column };
 	
-	public FtcCompletionProvider(CompletionsSource completionsSource, SqlCompletionType ... types) {
+	public FtcCompletionProvider(SyntaxElementSource syntaxElementSource, CompletionsSource completionsSource, SqlCompletionType... types) {
 		this.completionsSource = completionsSource;
+		this.syntaxElementSource = syntaxElementSource;
 		this.completionTypes = types;
-		setListCellRenderer(new FtcListCellRenderer());   
+		setListCellRenderer(new FtcListCellRenderer());
 	}
 
-	
-	
 	@Override
 	public boolean isAutoActivateOkay(JTextComponent tc) {
 		return false;
@@ -74,76 +76,87 @@ public class FtcCompletionProvider extends DefaultCompletionProvider {
 		return super.getParameterizedCompletions(tc);
 	}
 
-	private String recentText = null;
+	private String recentText = "";
 	private int recentCaretPosition = -1;
 
 	private void resetCompletions(JTextComponent comp) {
 		String text = comp.getText();
 		int caretPosition = comp.getCaretPosition();
-		if (caretPosition == recentCaretPosition && StringUtil.nullableEqual(text, recentText))
-			return;
-		else {
+			
+		if (StringUtil.emptyOrNull(text) || recentCaretPosition < 0 || (Math.abs(caretPosition - recentCaretPosition)) > 1)
+		{
 			Completions externalCompletions = completionsSource.get(text, caretPosition);
 			replacementBoundaries = externalCompletions.replacementBoundaries;
 			clear();
 			for (AbstractCompletion c : externalCompletions.getAll())
 				addCompletion(c);
 		}
+		
+		recentCaretPosition = caretPosition;
+		recentText = text;
 	}
 
+	
 	private void addCompletion(AbstractCompletion c) {
-		if(completionTypes.length == 0 || Op.in(c.completionType, completionTypes))
+		if (completionTypes.length == 0 || Op.in(c.completionType, completionTypes))
 			addCompletion(createCompletion(this, c));
 	}
 
-	public int size(){
+	public int size() {
 		return completions.size();
 	}
-	
-	public List<Completion> getParameterCompletions(JTextComponent comp)
-	{
+
+	public List<Completion> getParameterCompletions(JTextComponent comp) {
 		List<Completion> result = new ArrayList<Completion>();
-		
+
 		String text = comp.getText();
 		int caretPosition = comp.getCaretPosition();
-		
+
 		for (AbstractCompletion c : completionsSource.get(text, caretPosition).getAll())
-			if (Op.in(c.completionType, schemaCompletions)) // recursive template completions would be cool but...
+			if (Op.in(c.completionType, schemaCompletions)) // recursive
+															// template
+															// completions would
+															// be cool but...
 				result.add(createParamCompletion(this, c));
 
 		return result;
 	}
 
-	public static org.fife.ui.autocomplete.AbstractCompletion createCompletion(CompletionProvider provider, AbstractCompletion c)
-	{
+	public static org.fife.ui.autocomplete.AbstractCompletion createCompletion(CompletionProvider provider,
+			AbstractCompletion c) {
 		if (Op.in(c.completionType, schemaCompletions))
-			return new BasicCompletion(provider, Completions.patchFromCompletion(c), null, getSubCompletions(provider, c.children));
+			return new BasicCompletion(provider, Completions.patchFromCompletion(c), null,
+					getSubCompletions(provider, c.children));
 		else
-			return new TemplateCompletion(provider, c.displayName, c.displayName, Completions.patchFromCompletion(c)) ;
-		
+			return new TemplateCompletion(provider, c.displayName, c.displayName, Completions.patchFromCompletion(c));
+
 	}
-	
-	
-	public static org.fife.ui.autocomplete.AbstractCompletion createParamCompletion(CompletionProvider provider, AbstractCompletion c)
-	{
+
+	public static org.fife.ui.autocomplete.AbstractCompletion createParamCompletion(CompletionProvider provider,
+			AbstractCompletion c) {
 		Check.isTrue(Op.in(c.completionType, schemaCompletions));
-		
+
 		// null for short description will cause it to patch displayName only
-		return new  BasicCompletion(provider, c.displayName);
-		
+		return new BasicCompletion(provider, c.displayName);
+
 	}
-	
+
 	private static List<Completion> getSubCompletions(CompletionProvider provider, List<AbstractCompletion> children) {
 		List<Completion> result = new LinkedList<Completion>();
 
-		for (AbstractCompletion c : children){
-			Completion item = new BasicCompletion(provider, Completions.patchFromCompletion(c),  c.displayName , getSubCompletions(provider, c.children));
-			
+		for (AbstractCompletion c : children) {
+			Completion item = new BasicCompletion(provider, Completions.patchFromCompletion(c), c.displayName,
+					getSubCompletions(provider, c.children));
+
 			result.add(item);
 		}
 
 		return result;
 	}
 
-	
+	@Override
+	public List<SyntaxElement> get(String query) {
+		return syntaxElementSource.get(query);
+	}
+
 }
