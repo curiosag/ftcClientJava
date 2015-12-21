@@ -23,6 +23,7 @@ import interfaces.SyntaxElement;
 import manipulations.QueryHandler;
 import manipulations.QueryPatching;
 import structures.Completions;
+import structures.QueryResult;
 import structures.TableInfo;
 
 public class ftcClientController implements ActionListener, SyntaxElementSource, CompletionsSource {
@@ -39,29 +40,30 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 			model.queryText.setValue(cmd);
 		}
 	};
-	
+
 	public ftcClientController(ftcClientModel model, AbstractLogger logging, Connector connector) {
 		this.model = model;
 		this.queryHandler = new QueryHandler(logging, connector);
 		this.logging = logging;
-		
+
 		model.resultText.setValue(getUsageInfo());
-		
+
 		setupLogging();
 	}
 
 	private void setupLogging() {
-		logging.addObserver(new Observer(){
+		logging.addObserver(new Observer() {
 
 			@Override
 			public void update(Observable o, Object arg) {
 				Check.isTrue(o instanceof Logging);
 				Logging logging = (Logging) o;
-				if (logging.lastError().isPresent()) 
+				if (logging.lastError().isPresent())
 					model.errorText.setValue(logging.lastError().get());
-				if (logging.lastInfo().isPresent()) 
+				if (logging.lastInfo().isPresent())
 					model.infoText.setValue(logging.lastInfo().get());
-			}});
+			}
+		});
 	}
 
 	public List<TableInfo> getTableList(boolean addDetails) {
@@ -88,7 +90,11 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 	private void execSql() {
 		String sql = model.queryText.getValue();
 		history.add(sql);
-		model.resultText.setValue(queryHandler.getQueryResult(sql));
+		QueryResult result = queryHandler.getQueryResult(sql);
+		if (result.data.isPresent())
+			model.resultData.setValue(result.data.get());
+		
+		model.resultText.setValue(result.message.or(""));
 	}
 
 	@Override

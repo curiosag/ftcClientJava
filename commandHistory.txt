@@ -22,7 +22,7 @@ where Company matches('T.*') öüö
 select Company from wiki_cpdata
 where Company matches('T') öüö
 select Company from wiki_cpdata
-where Company contains('T') ö����������������������������������������������������������������������ö
+where Company contains('T') ö��������������������������������������������������������������������������������ö
 select Company from wiki_cpdata öüö
 select Company from wiki_cpdata
 
@@ -278,4 +278,20 @@ SELECT 'Assets adjusted to the year 2012' FROM wiki_cpdata; öüö
 SELECT 'Filing court district' FROM wiki_cpdata; öüö
 INSERT INTO combiview (datumB, menge) 
 VALUES (4, 5); öüö
+select * from statData; öüö
+SELECT * FROM v1; öüö
+INSERT INTO statData (total) 
+VALUES (2); öüö
+select * from v1; öüö
+select * from v1__; öüö
+SELECT * FROM combiview; öüö
+SELECT uhrzeit, SUM(menge) FROM combiview GROUP BY uhrzeit ; öüö
+SELECT uhrzeit, SUM(menge)FROM combiview GROUP BY uhrzeit 
+ORDER BY uhrzeit DESC; öüö
+SELECT uhrzeit, SUM(menge) FROM combiview 
+GROUP BY uhrzeit ORDER BY uhrzeit DESC 
+; öüö
+SELECT uhrzeit, SUM(menge) FROM combiview 
+GROUP BY uhrzeit ORDER BY uhrzeit ASC 
+; öüö
 

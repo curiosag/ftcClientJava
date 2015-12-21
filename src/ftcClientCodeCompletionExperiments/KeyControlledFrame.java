@@ -1,4 +1,4 @@
-package ftcClientJava;
+package ftcClientCodeCompletionExperiments;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.KeyEvent;

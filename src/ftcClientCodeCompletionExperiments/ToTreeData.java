@@ -1,4 +1,4 @@
-package ftcClientJava;
+package ftcClientCodeCompletionExperiments;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import structures.AbstractCompletion;

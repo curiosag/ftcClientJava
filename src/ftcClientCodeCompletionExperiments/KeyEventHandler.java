@@ -1,4 +1,4 @@
-package ftcClientJava;
+package ftcClientCodeCompletionExperiments;
 import java.awt.event.KeyEvent;
 
 public interface KeyEventHandler {

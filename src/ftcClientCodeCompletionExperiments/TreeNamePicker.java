@@ -1,4 +1,4 @@
-package ftcClientJava;
+package ftcClientCodeCompletionExperiments;
 
 /**
 * The MIT License

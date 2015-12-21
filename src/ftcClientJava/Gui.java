@@ -1,15 +1,16 @@
 package ftcClientJava;
 
 import javax.swing.*;
+import javax.swing.table.TableModel;
 import javax.swing.text.Document;
 import cg.common.check.Check;
 import cg.common.interfaces.AbstractKeyListener;
-
+import cg.common.misc.SimpleObservable;
 import ftcQueryEditor.QueryEditor;
 import interfaces.SyntaxElementSource;
 import interfaces.CompletionsSource;
 import manipulations.QueryHandler;
-import java.awt.*; 
+import java.awt.*;
 import java.awt.event.*;
 import java.util.Observable;
 import java.util.Observer;
@@ -25,7 +26,9 @@ public class Gui extends JFrame implements ActionListener, Observer {
 
 	private JTextField textFieldErr;
 	private JTextField textFieldInf;
-	
+
+	private JTable dataTable = null;
+
 	KeyboardActions keyActions = new KeyboardActions();
 
 	private final ActionListener controller;
@@ -33,16 +36,16 @@ public class Gui extends JFrame implements ActionListener, Observer {
 	private final CompletionsSource completionsSource;
 
 	public Gui(ActionListener controller, SyntaxElementSource syntaxElements, CompletionsSource completionsSource) {
-		
+
 		this.syntaxElements = syntaxElements;
 		this.completionsSource = completionsSource;
 		this.controller = controller;
-				
+
 		buildGui();
 		addKeyboardActions();
 
 	}
-	
+
 	private AbstractAction getAction(String actionId) {
 		return new AbstractAction() {
 			private static final long serialVersionUID = 1L;
@@ -61,7 +64,7 @@ public class Gui extends JFrame implements ActionListener, Observer {
 		keyActions.add(KeyEvent.VK_F3, 0, getAction(Const.listTables));
 		keyActions.add(KeyEvent.VK_F4, 0, getAction(Const.preview));
 		keyActions.add(KeyEvent.VK_F5, 0, getAction(Const.execSql));
-		keyActions.add(KeyEvent.VK_F11, 0, getAction(Const.oh));	
+		keyActions.add(KeyEvent.VK_F11, 0, getAction(Const.oh));
 	}
 
 	public void addQueryTextKeyListener(AbstractKeyListener k) {
@@ -93,29 +96,65 @@ public class Gui extends JFrame implements ActionListener, Observer {
 		return Observism.createObserver(queryEditor.queryText);
 	}
 
+	public Observer createResultDataObserver() {
+		return new Observer() {
+
+			@Override
+			public void update(Observable o, Object arg) {
+				Check.isTrue(o instanceof SimpleObservable);
+				SimpleObservable s = (SimpleObservable) o;
+				Check.isTrue(s.getValue() instanceof TableModel);
+				TableModel model = (TableModel) s.getValue();
+				dataTable.setModel(model);
+			}
+		};
+	}
+
 	private void buildGui() {
 		setLayout(new BorderLayout());
 
 		JPanel textControlsPane = createTextFieldArea();
 
-		JPanel rightPane = createResultDisplay();
+		JPanel rightPane = createTableDisplay();
 		JPanel buttonPane = createButtonArea();
 
 		JPanel leftPane = new JPanel(new BorderLayout());
 		queryEditor = new QueryEditor(syntaxElements, completionsSource);
 		leftPane.add(queryEditor, BorderLayout.PAGE_START);
-		leftPane.add(buttonPane, BorderLayout.CENTER);
-		leftPane.add(textControlsPane, BorderLayout.PAGE_END);
 
+		JPanel textPane = new JPanel(new BorderLayout());
+
+		textPane.add(buttonPane, BorderLayout.PAGE_START);
+		textPane.add(createResultDisplay(), BorderLayout.PAGE_END);
+		leftPane.add(textPane, BorderLayout.CENTER);
+
+		leftPane.add(textControlsPane, BorderLayout.PAGE_END);
 		add(leftPane, BorderLayout.LINE_START);
 		add(rightPane, BorderLayout.LINE_END);
-		
+
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(queryEditor.getMenu());
-		
+
 		setJMenuBar(menuBar);
 		menuBar.setVisible(true);
-		
+
+	}
+
+	private JPanel createTableDisplay() {
+		JPanel result = new JPanel(new BorderLayout());
+
+		String[] columnNames = { "0", "1", "2", "3", "4" };
+
+		Object[][] data = { { "", "", "", "", "", }, { "", "", "", "", "", }, { "", "", "", "", "", },
+				{ "", "", "", "", "", }, { "", "", "", "", "", }, };
+
+		dataTable = new JTable(data, columnNames);
+		JScrollPane scrollPane = new JScrollPane(dataTable);
+		dataTable.setFillsViewportHeight(true);
+
+		result.add(scrollPane, BorderLayout.CENTER);
+
+		return result;
 	}
 
 	private JEditorPane createEditorPane() {
@@ -133,7 +172,7 @@ public class Gui extends JFrame implements ActionListener, Observer {
 		UIManager.put("swing.boldMetal", Boolean.FALSE);
 
 		Gui result = new Gui(controller, s, c);
-		result.setSize(1800, 1500);
+		result.setSize(3000, 1500);
 		result.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		result.pack();
 		result.setVisible(true);

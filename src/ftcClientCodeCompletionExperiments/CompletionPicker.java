@@ -1,4 +1,4 @@
-package ftcClientJava;
+package ftcClientCodeCompletionExperiments;
 
 import java.awt.Component;
 import java.awt.GridLayout;

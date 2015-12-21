@@ -1,4 +1,4 @@
-package ftcClientJava;
+package ftcClientCodeCompletionExperiments;
 import structures.AbstractCompletion;
 
 public interface ItemChosenHandler {

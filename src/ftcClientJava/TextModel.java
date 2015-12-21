@@ -16,7 +16,7 @@ public class TextModel extends Observable {
 	String getValue() {
 		return value;
 	}
-
+	
 	private void notifyOnChange()
 	{
 		setChanged();
@@ -65,5 +65,5 @@ public class TextModel extends Observable {
 		Check.isTrue(o instanceof TextModel);
 		return ((TextModel) o).value;
 	}
-
+	
 }

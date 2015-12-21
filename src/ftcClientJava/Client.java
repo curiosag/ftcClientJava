@@ -46,7 +46,7 @@ public class Client {
 				Gui ui = Gui.createAndShowGUI(controller, controller, controller);
 				
 				model.errorText.addObserver(ui.createErrorTextObserver());
-
+				model.resultData.addObserver(ui.createResultDataObserver());
 				interlace(ui.opResultDocument(), ui.createOpResultObserver(), model.resultText);
 				interlace(ui.queryTextDocument(), ui.createQueryTextObserver(), model.queryText);
 
