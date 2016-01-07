@@ -11,7 +11,7 @@ import cg.common.check.Check;
 
 public class TextModel extends Observable {
 
-	private String value;
+	private String value = "";
 
 	String getValue() {
 		return value;

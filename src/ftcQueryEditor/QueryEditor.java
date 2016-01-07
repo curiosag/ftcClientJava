@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -17,6 +18,8 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JRootPane;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -44,8 +47,9 @@ import interfaces.SyntaxElementSource;
 import interfaces.SyntaxElement;
 import interfaces.SyntaxElementType;
 import manipulations.QueryPatching;
+import structures.ClientSettings;
 
-public class QueryEditor extends JPanel implements SyntaxConstants {
+public class QueryEditor extends JRootPane implements SyntaxConstants {
 
 	private static final long serialVersionUID = 1L;
 
@@ -54,31 +58,39 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 
 	private final SyntaxElementSource syntaxElementSource;
 	private final CompletionsSource completionsSource;
-
-	public QueryEditor(SyntaxElementSource syntaxElementSource, CompletionsSource completionsSource) {
+	private final ClientSettings clientSettings;
+	
+	public QueryEditor(SyntaxElementSource syntaxElementSource, CompletionsSource completionsSource, ClientSettings clientSettings) {
 		Check.notNull(syntaxElementSource);
 
 		this.syntaxElementSource = syntaxElementSource;
 		this.completionsSource = completionsSource;
+		this.clientSettings = clientSettings;
 
 		queryText = createTextArea();
 		queryText.setSyntaxEditingStyle(SYNTAX_STYLE_NONE);
 		queryText.addParser(new GftParser(syntaxElementSource));
 		queryText.setMarkOccurrences(false);
-		
+		queryText.setHighlightCurrentLine(clientSettings.highlightCurrentLine);
+
 		queryText.setParserDelay(100);
-		
-		scrollPane = new RTextScrollPane(queryText, true);
+
+		scrollPane = new RTextScrollPane(queryText, false);
+		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		Gutter gutter = scrollPane.getGutter();
 		gutter.setBookmarkingEnabled(true);
+		scrollPane.setIconRowHeaderEnabled(true);
+		scrollPane.setLineNumbersEnabled(clientSettings.lineNumbersEnabled);
 
+		setTheme(clientSettings.editorThemeXml);
+		
 		URL url = getClass().getResource("bookmark.png");
 		gutter.setBookmarkIcon(new ImageIcon(url));
 
-		add(scrollPane);
+		getContentPane().add(scrollPane);
 		ErrorStrip errorStrip = new ErrorStrip(queryText);
 
-		add(errorStrip, BorderLayout.LINE_END);
+		getContentPane().add(errorStrip, BorderLayout.LINE_END);
 
 		setCompletionProvider();
 		setTokenMaker();
@@ -96,27 +108,24 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 
 	public JMenu getMenu() {
 		JMenu menu = new JMenu("Editor");
-		JCheckBoxMenuItem cbItem = new JCheckBoxMenuItem(new CodeFoldingAction());
-		cbItem.setSelected(true);
-		menu.add(cbItem);
+		menu.setMnemonic(KeyEvent.VK_E);
+		JCheckBoxMenuItem cbItem;
 		cbItem = new JCheckBoxMenuItem(new ViewLineHighlightAction());
-		cbItem.setSelected(true);
+		cbItem.setSelected(clientSettings.highlightCurrentLine);
 		menu.add(cbItem);
 		cbItem = new JCheckBoxMenuItem(new ViewLineNumbersAction());
-		cbItem.setSelected(true);
-		menu.add(cbItem);
-		cbItem = new JCheckBoxMenuItem(new AnimateBracketMatchingAction());
-		cbItem.setSelected(true);
-		menu.add(cbItem);
-		cbItem = new JCheckBoxMenuItem(new BookmarksAction());
-		cbItem.setSelected(true);
+		cbItem.setSelected(clientSettings.lineNumbersEnabled);
 		menu.add(cbItem);
 		
+		// cbItem = new JCheckBoxMenuItem(new BookmarksAction());
 		// causes rather strange behavior
-//		cbItem = new JCheckBoxMenuItem(new MarkOccurrencesAction());
-//		cbItem.setSelected(false); 
-//		menu.add(cbItem);
+		// cbItem = new JCheckBoxMenuItem(new MarkOccurrencesAction());
+		// JCheckBoxMenuItem cbItem = new JCheckBoxMenuItem(new
+		// CodeFoldingAction());
+		// cbItem = new JCheckBoxMenuItem(new AnimateBracketMatchingAction());
+
 		cbItem = new JCheckBoxMenuItem(new TabLinesAction());
+		cbItem.setSelected(clientSettings.tabLines);
 		menu.add(cbItem);
 		menu.addSeparator();
 
@@ -134,6 +143,7 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 
 	private void addThemeItem(String name, String themeXml, ButtonGroup bg, JMenu menu) {
 		JRadioButtonMenuItem item = new JRadioButtonMenuItem(new ThemeAction(name, themeXml));
+		item.setSelected(themeXml.equals(clientSettings.editorThemeXml));
 		bg.add(item);
 		menu.add(item);
 	}
@@ -143,7 +153,7 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 		queryText.setTabSize(3);
 		queryText.setCaretPosition(0);
 		queryText.requestFocusInWindow();
-		queryText.setMarkOccurrences(true);
+		queryText.setMarkOccurrences(false);
 		queryText.setCodeFoldingEnabled(true);
 		queryText.setClearWhitespaceLinesEnabled(false);
 		queryText.setAntiAliasingEnabled(true);
@@ -181,33 +191,6 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 		return IntTuple.instance(x, y);
 	}
 
-	private void selectNextReplacementTag(int startFrom) {
-		int beginTagPos = queryText.getText().indexOf(uglySmallThings.Const.replacementTagBegin, startFrom);
-		int endTagPos = queryText.getText().indexOf(uglySmallThings.Const.replacementTagEnd, beginTagPos);
-		if (beginTagPos > 0 && endTagPos > 0) {
-			endTagPos = endTagPos + uglySmallThings.Const.replacementTagBegin.length();
-
-			// queryText.setCaretPosition(beginTagPos); set by select to end of
-			// selection
-			queryText.select(beginTagPos, endTagPos);
-
-		} else if (startFrom > 0)
-			selectNextReplacementTag(0);
-	}
-
-	private class BookmarksAction extends AbstractAction {
-		private static final long serialVersionUID = 1L;
-
-		public BookmarksAction() {
-			putValue(NAME, "Bookmarks");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			scrollPane.setIconRowHeaderEnabled(!scrollPane.isIconRowHeaderEnabled());
-		}
-
-	}
-
 	private class CodeFoldingAction extends AbstractAction {
 		private static final long serialVersionUID = 1L;
 
@@ -217,19 +200,6 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 
 		public void actionPerformed(ActionEvent e) {
 			queryText.setCodeFoldingEnabled(!queryText.isCodeFoldingEnabled());
-		}
-
-	}
-
-	private class MarkOccurrencesAction extends AbstractAction {
-		private static final long serialVersionUID = 1L;
-
-		public MarkOccurrencesAction() {
-			putValue(NAME, "Mark Occurrences");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			queryText.setMarkOccurrences(!queryText.getMarkOccurrences());
 		}
 
 	}
@@ -245,6 +215,7 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 		public void actionPerformed(ActionEvent e) {
 			selected = !selected;
 			queryText.setPaintTabLines(selected);
+			clientSettings.tabLines = selected;
 		}
 
 	}
@@ -259,17 +230,22 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			InputStream in = getClass().getResourceAsStream("/org/fife/ui/rsyntaxtextarea/themes/" + xml);
-			try {
-				Theme theme = Theme.load(in);
-				theme.apply(queryText);
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-			}
+			setTheme(xml);
 		}
 
 	}
 
+	private void setTheme(String xml) {
+		InputStream in = getClass().getResourceAsStream("/org/fife/ui/rsyntaxtextarea/themes/" + xml);
+		try {
+			Theme theme = Theme.load(in);
+			theme.apply(queryText);
+			clientSettings.editorThemeXml = xml;
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+		}
+	}
+	
 	private class ViewLineHighlightAction extends AbstractAction {
 		private static final long serialVersionUID = 1L;
 
@@ -279,6 +255,7 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 
 		public void actionPerformed(ActionEvent e) {
 			queryText.setHighlightCurrentLine(!queryText.getHighlightCurrentLine());
+			clientSettings.highlightCurrentLine = queryText.getHighlightCurrentLine();
 		}
 
 	}
@@ -292,33 +269,11 @@ public class QueryEditor extends JPanel implements SyntaxConstants {
 
 		public void actionPerformed(ActionEvent e) {
 			scrollPane.setLineNumbersEnabled(!scrollPane.getLineNumbersEnabled());
+			clientSettings.lineNumbersEnabled = scrollPane.getLineNumbersEnabled();
 		}
 
 	}
-
-	private class AnimateBracketMatchingAction extends AbstractAction {
-		private static final long serialVersionUID = 1L;
-
-		public AnimateBracketMatchingAction() {
-			putValue(NAME, "Animate Bracket Matching");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			queryText.setAnimateBracketMatching(!queryText.getAnimateBracketMatching());
-		}
-
-	}
-
-	public static void main(String[] args) {
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				QueryEditor e = new QueryEditor(null, null);
-				e.setSize(600, 400);
-				e.setVisible(true);
-			}
-		});
-	}
-
+	
 	public Document getDocument() {
 		return queryText.getDocument();
 	}

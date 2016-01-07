@@ -22,7 +22,7 @@ where Company matches('T.*') öüö
 select Company from wiki_cpdata
 where Company matches('T') öüö
 select Company from wiki_cpdata
-where Company contains('T') ö��������������������������������������������������������������������������������ö
+where Company contains('T') ö��������������������������������������������������������������������������������������������������������ö
 select Company from wiki_cpdata öüö
 select Company from wiki_cpdata
 
@@ -46,7 +46,7 @@ select Company from wiki_cpdata
 where Company starts with 'T' OR Company starts with 'V' öüö
 select * from Fuetterungen öüö
 select SUM(menge) from Fuetterungen
-group by datum öüö
+group by datum ��üö
 select SUM(menge) from Fuetterungen
 group by datum
 having sum(menge) > 1000 öüö
@@ -176,7 +176,7 @@ select * from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy; öüö
 select datum from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy; öüö
 select datum from Fuetterungen; öüö
 SELECT 'Total Assets pre-filing'
-FROM wiki_cpdata; öüö
+FROM wiki_cpdata; ö��ö
 Select * from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy; öüö
 Select * from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy;; öüö
 Select * from 1TypyBfvNYiwv5uvy9oFyc--JxfFv44FDARCWOTqy;;;;; öüö
@@ -278,7 +278,7 @@ SELECT 'Assets adjusted to the year 2012' FROM wiki_cpdata; öüö
 SELECT 'Filing court district' FROM wiki_cpdata; öüö
 INSERT INTO combiview (datumB, menge) 
 VALUES (4, 5); öüö
-select * from statData; öüö
+select * from statData; ö��ö
 SELECT * FROM v1; öüö
 INSERT INTO statData (total) 
 VALUES (2); öüö
@@ -294,4 +294,36 @@ GROUP BY uhrzeit ORDER BY uhrzeit DESC
 SELECT uhrzeit, SUM(menge) FROM combiview 
 GROUP BY uhrzeit ORDER BY uhrzeit ASC 
 ; öüö
+SELECT uhrzeit, SUM(menge) FROM combiview 
+GROUP BY uhrzeit ORDER BY uhrzeit DESC 
+; öüö
+SELECT * FROM statDataA; öüö
+SELECT uhrzeit, SUM(menge) FROM combiview 
+GROUP BY uhrzeit ORDER BY uhrzeit DESC 
+; öüö
+SELECT datum FROM combiview; öüö
+SELECT uhrzeit, SUM(menge) FROM combiview 
+GROUP BY uhrzeit ORDER BY uhrzeit DESC 
+; öüö
+SELECT 'Assets adjusted to the year 2012' FROM wiki_cpdata; öüö
+SELECT 'Assets adjusted to the year 2012' FROM wiki_cpdata offset 0 limit 10; öü��
+SELECT Company FROM wiki_cpdata offset 0 limit 10; öüö
+SELECT menge FROM Fuetterungen offset 0 limit 10; öüö
+SELECT menge FROM Fuetterungen; öüö
+SELECT 'Assets adjusted to the year 2012', Company, 'Filing court district' FROM  wiki_cpdata; öüö
+SELECT * FROM  wiki_cpdata; öüö
+ öüö
+SELECT * FROM  wiki_cpdata; öüö
+ öüö
+SELECT * FROM  wiki_cpdata; öüö
+SELECT 'Assets adjusted to the year 2012', Company, 'Filing court district' FROM  wiki_cpdata; öüö
+SELECT * FROM Fuetterungen; öüö
+ öüö
+SELECT * FROM Fuetterungen; öüö
+SELECT uhrzeit, SUM(menge), * FROM combiview 
+GROUP BY uhrzeit ORDER BY uhrzeit DESC 
+; öüö
+select * from Fuetterungen; öüö
+select sum(menge), datum from Fuetterungen GROUP BY datum ; öüö
+SELECT id FROM Fuetterungen ORDER BY menge; öüö
 

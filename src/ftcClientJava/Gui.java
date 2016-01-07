@@ -1,15 +1,25 @@
 package ftcClientJava;
 
 import javax.swing.*;
+import javax.swing.JSpinner.NumberEditor;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.table.TableModel;
 import javax.swing.text.Document;
 import cg.common.check.Check;
+import cg.common.core.AbstractLogger;
+import cg.common.core.DelegatingLogger;
 import cg.common.interfaces.AbstractKeyListener;
+import cg.common.interfaces.OnValueChangedEvent;
 import cg.common.misc.SimpleObservable;
+import cg.common.swing.WindowClosingListener;
 import ftcQueryEditor.QueryEditor;
 import interfaces.SyntaxElementSource;
 import interfaces.CompletionsSource;
+import interfaces.SettingsListener;
 import manipulations.QueryHandler;
+import net.miginfocom.swing.MigLayout;
+import structures.ClientSettings;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Observable;
@@ -17,15 +27,17 @@ import java.util.Observer;
 
 public class Gui extends JFrame implements ActionListener, Observer {
 	private static final long serialVersionUID = 1L;
-	private static final String textFieldString = "JTextField";
 
-	private JLabel actionLabel;
 	private QueryEditor queryEditor;
 
 	private JEditorPane opResult;
 
-	private JTextField textFieldErr;
-	private JTextField textFieldInf;
+	private JTextField textFieldClientId;
+	private JPasswordField textFieldClientSecret;
+	private JSpinner fieldDefaultLimit;
+
+	JSplitPane splitPaneH;
+	JSplitPane splitPaneV;
 
 	private JTable dataTable = null;
 
@@ -34,20 +46,50 @@ public class Gui extends JFrame implements ActionListener, Observer {
 	private final ActionListener controller;
 	private final SyntaxElementSource syntaxElements;
 	private final CompletionsSource completionsSource;
+	private final ClientSettings clientSettings;
 
-	public Gui(ActionListener controller, SyntaxElementSource syntaxElements, CompletionsSource completionsSource) {
+	private final AbstractLogger logger;
+
+	public Gui(ActionListener controller, SyntaxElementSource syntaxElements, CompletionsSource completionsSource,
+			ClientSettings clientSettings, AbstractLogger logger) {
 
 		this.syntaxElements = syntaxElements;
 		this.completionsSource = completionsSource;
 		this.controller = controller;
+		this.clientSettings = clientSettings;
+		this.logger = logger;
 
 		buildGui();
 		addKeyboardActions();
+		this.addWindowListener(new WindowClosingListener() {
+
+			@Override
+			public void windowClosing(WindowEvent e) {
+				writeClientSettings();
+			}
+		});
 
 	}
 
-	private AbstractAction getAction(String actionId) {
-		return new AbstractAction() {
+	private void writeClientSettings() {
+		clientSettings.clientId = textFieldClientId.getText();
+		clientSettings.clientSecret = String.valueOf(textFieldClientSecret.getPassword());
+		clientSettings.dividerLocationH = splitPaneH.getDividerLocation();
+		clientSettings.dividerLocationV = splitPaneV.getDividerLocation();
+		clientSettings.x = getX();
+		clientSettings.y = getY();
+		clientSettings.width = getWidth();
+		clientSettings.height = getHeight();
+		clientSettings.defaultQueryLimit = getQueryLimit();
+		clientSettings.write();
+	}
+
+	private int getQueryLimit() {
+		return ((SpinnerNumberModel) fieldDefaultLimit.getModel()).getNumber().intValue();
+	};
+
+	private AbstractAction getAction(String name, String actionId) {
+		return new AbstractAction(name) {
 			private static final long serialVersionUID = 1L;
 
 			@Override
@@ -58,13 +100,12 @@ public class Gui extends JFrame implements ActionListener, Observer {
 	}
 
 	private void addKeyboardActions() {
-		keyActions.add(KeyEvent.VK_A, KeyEvent.CTRL_DOWN_MASK, getAction(""));
-		keyActions.add(KeyEvent.VK_F1, 0, getAction(Const.prev));
-		keyActions.add(KeyEvent.VK_F2, 0, getAction(Const.next));
-		keyActions.add(KeyEvent.VK_F3, 0, getAction(Const.listTables));
-		keyActions.add(KeyEvent.VK_F4, 0, getAction(Const.preview));
-		keyActions.add(KeyEvent.VK_F5, 0, getAction(Const.execSql));
-		keyActions.add(KeyEvent.VK_F11, 0, getAction(Const.oh));
+		keyActions.add(KeyEvent.VK_LEFT, KeyEvent.ALT_MASK, getAction("", Const.prev));
+		keyActions.add(KeyEvent.VK_RIGHT, KeyEvent.ALT_MASK, getAction("", Const.next));
+
+		keyActions.add(KeyEvent.VK_F3, 0, getAction("", Const.listTables));
+		keyActions.add(KeyEvent.VK_F4, 0, getAction("", Const.preview));
+		keyActions.add(KeyEvent.VK_F5, 0, getAction("", Const.execSql));
 	}
 
 	public void addQueryTextKeyListener(AbstractKeyListener k) {
@@ -79,20 +120,30 @@ public class Gui extends JFrame implements ActionListener, Observer {
 	public Document opResultDocument() {
 		return opResult.getDocument();
 	}
-
-	public Observer createErrorTextObserver() {
-		return Observism.createObserver(textFieldErr);
+	
+	public Observer createClientIdObserver() {
+		return Observism.createObserver(textFieldClientId);
 	}
 
-	public Observer createInfoTextObserver() {
-		return Observism.createObserver(textFieldInf);
+	public Observer createClientSecretObserver() {
+		return Observism.createObserver(textFieldClientSecret);
 	}
-
+	
+	public void addClientIdChangedListener(OnValueChangedEvent e)
+	{
+		Observism.addValueChangedListener(textFieldClientId, e);
+	}
+	
+	public void addClientSecretChangedListener(OnValueChangedEvent e)
+	{
+		Observism.addValueChangedListener(textFieldClientSecret, e);
+	}
+	
 	public Observer createOpResultObserver() {
 		return Observism.createObserver(opResult);
 	}
 
-	public Observer createQueryTextObserver() {
+	public Observer createQueryObserver() {
 		return Observism.createObserver(queryEditor.queryText);
 	}
 
@@ -102,7 +153,7 @@ public class Gui extends JFrame implements ActionListener, Observer {
 			@Override
 			public void update(Observable o, Object arg) {
 				Check.isTrue(o instanceof SimpleObservable);
-				SimpleObservable s = (SimpleObservable) o;
+				SimpleObservable<?> s = (SimpleObservable<?>) o;
 				Check.isTrue(s.getValue() instanceof TableModel);
 				TableModel model = (TableModel) s.getValue();
 				dataTable.setModel(model);
@@ -113,48 +164,105 @@ public class Gui extends JFrame implements ActionListener, Observer {
 	private void buildGui() {
 		setLayout(new BorderLayout());
 
-		JPanel textControlsPane = createTextFieldArea();
+		JScrollPane resultDataArea = createTableDisplay();
+		JPanel buttonArea = createButtonArea();
+		queryEditor = new QueryEditor(syntaxElements, completionsSource, clientSettings);
+		JPanel resultextArea = createResultDisplay();
+		JPanel textControlsPane = createSettingsArea();
 
-		JPanel rightPane = createTableDisplay();
-		JPanel buttonPane = createButtonArea();
+		createSplitLayout(resultDataArea, buttonArea, resultextArea, textControlsPane);
 
-		JPanel leftPane = new JPanel(new BorderLayout());
-		queryEditor = new QueryEditor(syntaxElements, completionsSource);
-		leftPane.add(queryEditor, BorderLayout.PAGE_START);
-
-		JPanel textPane = new JPanel(new BorderLayout());
-
-		textPane.add(buttonPane, BorderLayout.PAGE_START);
-		textPane.add(createResultDisplay(), BorderLayout.PAGE_END);
-		leftPane.add(textPane, BorderLayout.CENTER);
-
-		leftPane.add(textControlsPane, BorderLayout.PAGE_END);
-		add(leftPane, BorderLayout.LINE_START);
-		add(rightPane, BorderLayout.LINE_END);
-
-		JMenuBar menuBar = new JMenuBar();
-		menuBar.add(queryEditor.getMenu());
-
-		setJMenuBar(menuBar);
-		menuBar.setVisible(true);
+		setMenu();
 
 	}
 
-	private JPanel createTableDisplay() {
-		JPanel result = new JPanel(new BorderLayout());
+	private void createSplitLayout(JScrollPane resultDataArea, JPanel buttonArea, JPanel resultextArea,
+			JPanel textControlsPane) {
+		splitPaneV = createSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		splitPaneV.setDividerLocation(clientSettings.dividerLocationV);
 
-		String[] columnNames = { "0", "1", "2", "3", "4" };
+		JPanel frame0L = new JPanel();
+		frame0L.setLayout(new BoxLayout(frame0L, BoxLayout.Y_AXIS));
 
-		Object[][] data = { { "", "", "", "", "", }, { "", "", "", "", "", }, { "", "", "", "", "", },
-				{ "", "", "", "", "", }, { "", "", "", "", "", }, };
+		JPanel frame0R = new JPanel();
+		frame0R.setLayout(new BoxLayout(frame0R, BoxLayout.Y_AXIS));
 
-		dataTable = new JTable(data, columnNames);
+		splitPaneH = createSplitPane(JSplitPane.VERTICAL_SPLIT);
+		splitPaneH.setDividerLocation(clientSettings.dividerLocationH);
+
+		frame0R.add(buttonArea);
+		frame0R.add(splitPaneH);
+
+		buttonArea.setAlignmentX(Component.LEFT_ALIGNMENT);
+		splitPaneH.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		splitPaneV.add(frame0L, JSplitPane.LEFT);
+		splitPaneV.add(frame0R, JSplitPane.RIGHT);
+
+		frame0L.add(textControlsPane);
+		frame0L.add(resultextArea);
+		textControlsPane.setAlignmentX(Component.LEFT_ALIGNMENT);
+		resultextArea.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		splitPaneH.setTopComponent(queryEditor);
+		splitPaneH.setBottomComponent(resultDataArea);
+
+		add(splitPaneV);
+	}
+
+	private JSplitPane createSplitPane(int orientation) {
+		JSplitPane frame0 = new JSplitPane();
+		frame0.setOrientation(orientation);
+		frame0.setDividerSize(2);
+		return frame0;
+	}
+
+	private void setMenu() {
+		JMenuBar menuBar = new JMenuBar();
+
+		JMenu menu = new JMenu("File");
+		menu.setMnemonic(KeyEvent.VK_F);
+
+		menu.add(createMenuItem(KeyEvent.VK_O, getAction("Open", Const.fileOpen)));
+		menu.add(createMenuItem(KeyEvent.VK_S, getAction("Save", Const.fileSave)));
+		menu.add(createMenuItem(KeyEvent.VK_E, createExportCsvAction("Export")));
+
+		menuBar.add(menu);
+		menuBar.add(queryEditor.getMenu());
+		setJMenuBar(menuBar);
+		menuBar.setVisible(true);
+	}
+
+	private Action createExportCsvAction(String name) {
+		return new AbstractAction(name) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (tablePopulated())
+					controller.actionPerformed(new ActionEvent(dataTable.getModel(), e.getID(), Const.exportCsv));
+				else
+					logger.Info("no data to export");
+			}
+
+			private boolean tablePopulated() {
+				return dataTable != null && dataTable.getModel() != null && dataTable.getModel().getRowCount() > 0;
+			}
+		};
+	}
+
+	private JMenuItem createMenuItem(int keyEvent, Action action) {
+		JMenuItem result = new JMenuItem(action);
+		result.setAccelerator(KeyStroke.getKeyStroke(keyEvent, ActionEvent.CTRL_MASK));
+		result.setMnemonic(keyEvent);
+		return result;
+	}
+
+	private JScrollPane createTableDisplay() {
+		dataTable = new JTable();
 		JScrollPane scrollPane = new JScrollPane(dataTable);
 		dataTable.setFillsViewportHeight(true);
-
-		result.add(scrollPane, BorderLayout.CENTER);
-
-		return result;
+		return scrollPane;
 	}
 
 	private JEditorPane createEditorPane() {
@@ -168,117 +276,129 @@ public class Gui extends JFrame implements ActionListener, Observer {
 		SwingUtilities.invokeLater(r);
 	}
 
-	static Gui createAndShowGUI(ActionListener controller, SyntaxElementSource s, CompletionsSource c) {
-		UIManager.put("swing.boldMetal", Boolean.FALSE);
-
-		Gui result = new Gui(controller, s, c);
-		result.setSize(3000, 1500);
-		result.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		result.pack();
-		result.setVisible(true);
-
-		return result;
-	}
-
 	private JPanel createButtonArea() {
-		JButton buttonExecSql = createButton(Const.execSql);
-		JButton buttonListTables = createButton(Const.listTables);
-		JButton buttonPreview = createButton(Const.preview);
-		JButton buttonOh = createButton(Const.oh);
-		JButton buttonPrevCmd = createButton(Const.prev);
-		JButton buttonNextCmd = createButton(Const.next);
 
-		JPanel buttonPane = new JPanel(new GridLayout(1, 6));
-		buttonPane.add(buttonPrevCmd);
-		buttonPane.add(buttonNextCmd);
-		buttonPane.add(buttonListTables);
-		buttonPane.add(buttonOh);
-		buttonPane.add(buttonPreview);
-		buttonPane.add(buttonExecSql);
+		JButton buttonExecSql = createButton(Const.execSql, "control_play_blue.png", "execute command (F5)");
+		JButton buttonListTables = createButton(Const.listTables, "table.png", "list tables (F3)");
+		JButton buttonPreview = createButton(Const.preview, "control_play.png", "view preprocessed query (F4)");
+		JButton buttonPrevCmd = createButton(Const.prev, "control_rewind_blue.png", "previous command (Alt+left)");
+		JButton buttonNextCmd = createButton(Const.next, "control_fastforward_blue.png", "next command (Alt+right)");
+		JButton buttonExportCsvCmd = createButton(Const.exportCsv, "report_disk.png", "export csv (Ctrl+E)");
+		buttonExportCsvCmd.setAction(createExportCsvAction(""));
+		buttonExportCsvCmd.setIcon(createIcon("report_disk.png")); 
+		buttonExportCsvCmd.setToolTipText("export csv (Ctrl+E)");
+
+		JPanel buttonPane = new JPanel(new FlowLayout());
+
+		buttonPane.setLayout(new BoxLayout(buttonPane, BoxLayout.X_AXIS));
+
+		buttonPane.add(createSpacer(30));
+		addButton(buttonPrevCmd, buttonPane);
+		addButton(buttonPreview, buttonPane);
+		addButton(buttonExecSql, buttonPane);
+		addButton(buttonNextCmd, buttonPane);
+		addButton(buttonListTables, buttonPane);
+		buttonPane.add(createSpacer(30));
+		addButton(buttonExportCsvCmd, buttonPane);
+
+		buttonPane.setBorder(BorderFactory.createEmptyBorder(0, 2, 2, 0));
+
 		return buttonPane;
 	}
 
-	private JPanel createTextFieldArea() {
-		textFieldErr = createTextField();
-		textFieldInf = createTextField();
-
-		JLabel textFieldLabel = setLabels(textFieldErr, "err: ");
-		JLabel ftfLabel = setLabels(textFieldInf, "inf: ");
-
-		actionLabel = new JLabel("...");
-		actionLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-
-		JPanel textControlsPane = new JPanel();
-		GridBagLayout gridbag = new GridBagLayout();
-		GridBagConstraints c = new GridBagConstraints();
-		textControlsPane.setLayout(gridbag);
-
-		JLabel[] labels = { textFieldLabel, ftfLabel };
-		JTextField[] textFields = { textFieldErr, textFieldInf };
-		addLabelTextRows(labels, textFields, gridbag, textControlsPane);
-
-		c.gridwidth = GridBagConstraints.REMAINDER; // last
-		c.anchor = GridBagConstraints.WEST;
-		c.weightx = 1.0;
-		textControlsPane.add(actionLabel, c);
-		textControlsPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("Text Fields"),
-				BorderFactory.createEmptyBorder(5, 5, 5, 5)));
-		return textControlsPane;
+	private Component createSpacer(int width) {
+		return Box.createRigidArea(new Dimension(width, 0));
 	}
 
-	private JButton createButton(String actionCommand) {
-		JButton buttonExecSql = new JButton(actionCommand);
-		buttonExecSql.addActionListener(this);
-		buttonExecSql.setActionCommand(actionCommand);
-		return buttonExecSql;
+	private JButton createButton(String actionCommand, String iconUrl, String tipText) {
+		JButton b = new JButton(createIcon(iconUrl));
+
+		b.addActionListener(this);
+		b.setActionCommand(actionCommand);
+		b.setToolTipText(tipText);
+		return b;
+	}
+
+	private ImageIcon createIcon(String iconUrl) {
+		return new ImageIcon(getClass().getResource(iconUrl));
+	}
+
+	private void addButton(JButton buttonPrevCmd, JPanel buttonPane) {
+		buttonPane.add(buttonPrevCmd);
+		buttonPane.add(createSpacer(5));
+	}
+
+	private JPanel createSettingsArea() {
+		textFieldClientId = new JTextField(35);
+		textFieldClientSecret = new JPasswordField(35);
+		textFieldClientSecret.setEchoChar('*');
+		JButton buttonReauth = createButton(Const.reauthenticate, "arrow_refresh.png", "re-authenticate");
+		buttonReauth.setMaximumSize(new Dimension(30, 20));
+		SpinnerNumberModel numberModel = new SpinnerNumberModel(clientSettings.defaultQueryLimit, 0, 100000, 1);
+		fieldDefaultLimit = new JSpinner(numberModel);
+		NumberEditor editor = new JSpinner.NumberEditor(fieldDefaultLimit);
+		fieldDefaultLimit.setEditor(editor);
+		numberModel.addChangeListener(createDefaultLimitChangeListener());
+
+		JPanel resultPane = new JPanel(new MigLayout("wrap 2"));
+
+		resultPane.add(new JLabel("Client Id"));
+		resultPane.add(buttonReauth, "gapleft 155");
+		resultPane.add(textFieldClientId, "span 2");
+
+		resultPane.add(new JLabel("Client Secret"));
+
+		JCheckBox view = new JCheckBox("show");
+		view.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				setPasswordVisible(e.getStateChange() == ItemEvent.SELECTED);
+			}
+		});
+
+		resultPane.add(view);
+
+		resultPane.add(textFieldClientSecret, "span 2");
+
+		resultPane.add(new JLabel("Query Limit"));
+		resultPane.add(fieldDefaultLimit);
+		fieldDefaultLimit.setMinimumSize(new Dimension(100, 18));
+
+		textFieldClientId.setText(clientSettings.clientId);
+		textFieldClientSecret.setText(clientSettings.clientSecret);
+
+		resultPane.setBorder(BorderFactory.createEmptyBorder(2, 2, 0, 2));
+		return resultPane;
+	}
+
+	private ChangeListener createDefaultLimitChangeListener() {
+		return new ChangeListener() {
+
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				clientSettings.defaultQueryLimit = getQueryLimit();
+			}
+		};
+	}
+
+	private void setPasswordVisible(boolean value) {
+		if (value)
+			textFieldClientSecret.setEchoChar((char) 0);
+		else
+			textFieldClientSecret.setEchoChar('*');
 	}
 
 	private JPanel createResultDisplay() {
 		opResult = createEditorPane();
 		JScrollPane opResultScrollPane = new JScrollPane(opResult);
-		opResultScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		opResultScrollPane.setPreferredSize(new Dimension(250, 250));
-		opResultScrollPane.setMinimumSize(new Dimension(250, 250));
 
-		JPanel rightPane = new JPanel(new BorderLayout());
-		rightPane.add(opResultScrollPane, BorderLayout.CENTER);
-		rightPane.add(new JTextField(60), BorderLayout.PAGE_END);
-		rightPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("result"),
-				BorderFactory.createEmptyBorder(5, 5, 5, 5)));
-		rightPane.setSize(600, 600);
-		return rightPane;
-	}
+		JPanel resultPane = new JPanel(new BorderLayout());
+		resultPane.add(opResultScrollPane, BorderLayout.CENTER);
 
-	private JLabel setLabels(JTextField textField1, String label) {
-		JLabel textFieldLabel = new JLabel(label);
-		textFieldLabel.setLabelFor(textField1);
-		return textFieldLabel;
-	}
+		resultPane.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
+		resultPane.setPreferredSize(new Dimension(300, 600));
 
-	private JTextField createTextField() {
-		JTextField textField1 = new JTextField(35);
-		textField1.setActionCommand(textFieldString);
-		textField1.addActionListener(this);
-		return textField1;
-	}
-
-	private void addLabelTextRows(JLabel[] labels, JTextField[] textFields, GridBagLayout gridbag,
-			Container container) {
-		GridBagConstraints c = new GridBagConstraints();
-		c.anchor = GridBagConstraints.EAST;
-		int numLabels = labels.length;
-
-		for (int i = 0; i < numLabels; i++) {
-			c.gridwidth = GridBagConstraints.RELATIVE; // next-to-last
-			c.fill = GridBagConstraints.NONE; // reset to default
-			c.weightx = 0.0; // reset to default
-			container.add(labels[i], c);
-
-			c.gridwidth = GridBagConstraints.REMAINDER; // end row
-			c.fill = GridBagConstraints.HORIZONTAL;
-			c.weightx = 1.0;
-			container.add(textFields[i], c);
-		}
+		return resultPane;
 	}
 
 	private void onStructureChanged() {
@@ -293,11 +413,46 @@ public class Gui extends JFrame implements ActionListener, Observer {
 	@Override
 	public void update(Observable o, Object arg) {
 		if (o instanceof QueryHandler)
-			runDeferred(() -> onStructureChanged());
+			runDeferred(new Runnable() {
+
+				@Override
+				public void run() {
+					onStructureChanged();
+				}
+			});
 	}
 
 	public Document queryTextDocument() {
 		return queryEditor.getDocument();
 	}
 
+	public void addAuthInfoSettingsListener(SettingsListener l) {
+		addSettingsChangedListener(textFieldClientId, l);
+		addSettingsChangedListener(textFieldClientSecret, l);
+	}
+	
+	private void addSettingsChangedListener(JTextField textField, SettingsListener l) {
+		Observism.addValueChangedListener(textField, new OnValueChangedEvent(){
+
+			@Override
+			public void notify(JTextField field) {
+				l.onChanged(textField.getText(), textField.getName());
+			}});
+	}	
+	
+	static Gui createAndShowGUI(ActionListener controller, SyntaxElementSource s, CompletionsSource c,
+			ClientSettings clientSettings, DelegatingLogger logging) {
+		UIManager.put("swing.boldMetal", Boolean.FALSE);
+
+		Gui result = new Gui(controller, s, c, clientSettings, logging);
+		result.setPreferredSize(new Dimension(clientSettings.width, clientSettings.height));
+		result.setLocation(clientSettings.x, clientSettings.y);
+
+		result.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		result.pack();
+		result.setVisible(true);
+		result.queryEditor.queryText.grabFocus();
+
+		return result;
+	}
 }
