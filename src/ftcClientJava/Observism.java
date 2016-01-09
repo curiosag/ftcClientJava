@@ -8,43 +8,55 @@ import java.util.Observer;
 import javax.swing.JEditorPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 import cg.common.interfaces.OnValueChangedEvent;
 
 public class Observism {
 
-	public static Observer createObserver(JTextArea f)
+	public static Observer createObserver(final JTextArea f)
 	{
 		return new Observer() {
 			@Override
-			public void update(Observable o, Object arg) {
-				f.setText(TextModel.fromObservable(o));
+			public void update(final Observable o, Object arg) {
+				SwingUtilities.invokeLater(new Runnable(){
+					@Override
+					public void run() {
+						f.setText(TextModel.fromObservable(o));
+					}});
 			}
 		};
 	}
 
-	public static Observer createObserver(JTextField f)
+	public static Observer createObserver(final JTextField f)
 	{
 		return new Observer() {
 			@Override
-			public void update(Observable o, Object arg) {
-				f.setText(TextModel.fromObservable(o));
+			public void update(final Observable o, Object arg) {
+				SwingUtilities.invokeLater(new Runnable(){
+					@Override
+					public void run() {
+						f.setText(TextModel.fromObservable(o));
+					}});
 			}
 		};
 	}
 	
-	public static Observer createObserver(JEditorPane f)
+	public static Observer createObserver(final JEditorPane f)
 	{
 		return new Observer() {
 			@Override
-			public void update(Observable o, Object arg) {
-				f.setText(TextModel.fromObservable(o));
-				f.repaint();
+			public void update(final Observable o, Object arg) {
+				SwingUtilities.invokeLater(new Runnable(){
+					@Override
+					public void run() {
+						f.setText(TextModel.fromObservable(o));		
+					}});
 			}
 		};
 	}
 
-	private static FocusListener createValueChangedListener(JTextField textField, OnValueChangedEvent delegate)
+	private static FocusListener createValueChangedListener(final JTextField textField, final OnValueChangedEvent delegate)
 	{
 		FocusListener result = new FocusListener(){
 			

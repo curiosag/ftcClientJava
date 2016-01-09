@@ -3,24 +3,23 @@ package ftcClientJava;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.JEditorPane;
-import javax.swing.table.TableModel;
-
+import javax.swing.SwingWorker;
 import com.google.common.base.Stopwatch;
 
 import cg.common.check.Check;
 import cg.common.core.AbstractLogger;
+import cg.common.http.HttpStatus;
+import cg.common.interfaces.Continuation;
 import cg.common.io.FileUtil;
 import cg.common.io.StringStorage;
 import cg.common.misc.CmdDestination;
 import cg.common.misc.CmdHistory;
+import cg.common.threading.Function;
 import interfaces.CompletionsSource;
 import interfaces.Connector;
 import interfaces.OnFileAction;
@@ -34,16 +33,18 @@ import structures.Completions;
 import structures.QueryResult;
 import structures.TableInfo;
 import uglySmallThings.CSV;
+import uglySmallThings.Workers;
 import util.StringUtil;
 
 public class ftcClientController implements ActionListener, SyntaxElementSource, CompletionsSource {
-	
+
 	public final ftcClientModel model;
 	private final QueryHandler queryHandler;
 	private final AbstractLogger logging;
 	private final ClientSettings clientSettings;
 	private final Connector connector;
 
+	private SwingWorker<QueryResult, Object> executionWorker = Workers.createEmptyWorker();
 	private final CmdHistory history;
 	private final CmdDestination historyScrollDestination = new CmdDestination() {
 		@Override
@@ -52,7 +53,8 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 		}
 	};
 
-	private Stopwatch stopwatch = Stopwatch.createUnstarted();
+	private Stopwatch executionStopwatch = Stopwatch.createUnstarted();
+	private boolean isExecuting = false;
 
 	public ftcClientController(ftcClientModel model, AbstractLogger logging, Connector connector,
 			ClientSettings clientSettings, StringStorage cmdHistoryStorage) {
@@ -61,38 +63,22 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 		this.logging = logging;
 		this.clientSettings = clientSettings;
 		this.connector = connector;
-		
+
 		history = new CmdHistory(cmdHistoryStorage);
 	}
 
-	public List<TableInfo> getTableList(boolean addDetails) {
-		return queryHandler.getTableList(addDetails);
+	private void setStateIsExecuting(boolean value) {
+		Check.isFalse(isExecuting && value);
+		isExecuting = value;
+		if (isExecuting) {
+			executionStopwatch.reset();
+			executionStopwatch.start();
+		} else
+			executionStopwatch.stop();
 	}
 
-	public QueryPatching getPatcher(String query, int cursorPos) {
-		return queryHandler.getPatcher(query, cursorPos);
-	}
-
-	private void execSql() {
-		String sql = model.queryText.getValue();
-		history.add(sql);
-		stopwatch.reset();
-		stopwatch.start();
-		QueryResult result = queryHandler.getQueryResult(sql);
-		stopwatch.stop();
-
-		if (result.data.isPresent())
-			model.resultData.setValue(result.data.get());
-
-		String msg;
-		if (result.data.isPresent())
-			msg = String.format("Read %d records ", result.data.get().getRowCount());
-		else
-			msg = "Executed query ";
-
-		float elapsed = (float) stopwatch.elapsed(TimeUnit.MILLISECONDS) / 1000;
-		msg = msg + String.format("in %.3f seconds \n", elapsed);
-		logging.Info(msg + result.message.or(""));
+	private boolean getStateIsExecuting() {
+		return isExecuting;
 	}
 
 	@Override
@@ -100,26 +86,32 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 
 		switch (e.getActionCommand()) {
 		case Const.execSql:
-			execSql();
+			if (!getStateIsExecuting())
+				hdlExecSql();
+			break;
+
+		case Const.cancelExecSql:
+			if (getStateIsExecuting())
+				hdlCancelExecSql();
 			break;
 
 		case Const.listTables:
 			model.resultData.setValue(queryHandler.getTableInfo());
 			break;
 
-		case Const.preview:
+		case Const.viewPreprocessedQuery:
 			logging.Info(queryHandler.previewExecutedSql(model.queryText.getValue()));
 			break;
 
-		case Const.oh:
-			;
-			break;
-
-		case Const.prev:
+		case Const.memorizeCommand:
+			hdlRememberCommand();
+			break;	
+			
+		case Const.previousCommand:
 			history.prev(historyScrollDestination);
 			break;
 
-		case Const.next:
+		case Const.nextCommand:
 			history.next(historyScrollDestination);
 			break;
 
@@ -134,14 +126,86 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 		case Const.exportCsv:
 			hdlExportCsvAction(e);
 			break;
-			
+
+		case Const.changeAuthInfo:
+			if (!getStateIsExecuting())
+				hdlChangeAuthInfo();
+			break;
+
 		case Const.reauthenticate:
-			hdlReauthenticate();
+			if (!getStateIsExecuting())
+				hdlReauthenticate();
 			break;
 
 		default:
 			break;
 		}
+	}
+
+	private void hdlRememberCommand() {
+		history.add(model.queryText.getValue());
+		logging.Info("command memorized");
+	}
+
+	private void hdlChangeAuthInfo() {
+		if (checkCredentialsPlausible())
+			resetConnector();
+	}
+
+	private void hdlExecSql() {
+		executionWorker = Workers.goUnderground(new Function<QueryResult>() {
+			@Override
+			public QueryResult invoke() {
+				setStateIsExecuting(true);
+				try {
+					return getQueryResult();
+				} catch (Exception e) {
+					return new QueryResult(HttpStatus.SC_METHOD_FAILURE, null, "Exception occured: " + e.getMessage());
+				}
+			}
+		}, new Continuation<QueryResult>() {
+			@Override
+			public void invoke(QueryResult value) {
+				onQueryResult(value);
+				setStateIsExecuting(false);
+			}
+		});
+		executionWorker.execute();
+	}
+
+	private QueryResult getQueryResult() {
+		String sql = model.queryText.getValue();
+
+		history.add(sql);
+		
+		return queryHandler.getQueryResult(sql);
+	}
+
+	private void onQueryResult(QueryResult result) {
+		if (result.data.isPresent())
+			model.resultData.setValue(result.data.get());
+
+		String msg;
+		if (result.data.isPresent())
+			msg = String.format("Read %d records ", result.data.get().getRowCount());
+		else
+			msg = "Executed query ";
+
+		float elapsed = (float) executionStopwatch.elapsed(TimeUnit.MILLISECONDS) / 1000;
+		msg = msg + String.format("in %.3f seconds \n", elapsed);
+		logging.Info(msg + result.message.or(""));
+
+	}
+
+	private void hdlCancelExecSql() {
+		if (executionWorker.isDone())
+			return;
+
+		if (!executionWorker.isCancelled()) {
+			executionWorker.cancel(true);
+			onQueryResult(new QueryResult(HttpStatus.SC_METHOD_FAILURE, null, "execution cancelled"));
+		}
+		setStateIsExecuting(false);
 	}
 
 	private void hdlReauthenticate() {
@@ -173,36 +237,21 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 	}
 
 	private void hdlExportCsvAction(ActionEvent e) {
-		new FileAction("Export", clientSettings.pathCsvFile, null, new OnFileAction() {
+		if (tablePopulated()) {
+			new FileAction("Export", clientSettings.pathCsvFile, null, new OnFileAction() {
 
-			@Override
-			public void onFileAction(ActionEvent e, File file) {
-				Check.isTrue(e.getSource() instanceof TableModel);
-
-				clientSettings.pathCsvFile = util.FileUtil.getPathOnly(file);
-				logging.Info(CSV.write((TableModel) e.getSource(), file.getPath()));
-			}
-		}).actionPerformed(e);
+				@Override
+				public void onFileAction(ActionEvent e, File file) {
+					clientSettings.pathCsvFile = util.FileUtil.getPathOnly(file);
+					logging.Info(CSV.write(model.resultData.getValue(), file.getPath()));
+				}
+			}).actionPerformed(e);
+		} else
+			logging.Info("no data to export");
 	}
 
-	@SuppressWarnings("unused")
-	private void loadUrlContent(JEditorPane editorPane) {
-		java.net.URL helpURL = null;
-		try {
-			helpURL = new java.net.URL("https://en.wikipedia.org/wiki/Planned_obsolescence#See_also");
-			helpURL = null;
-		} catch (MalformedURLException e1) {
-			e1.printStackTrace();
-		}
-		if (helpURL != null) {
-			try {
-				editorPane.setPage(helpURL);
-			} catch (IOException e) {
-				System.err.println("Attempted to read a bad URL: " + helpURL);
-			}
-		} else {
-			System.err.println("Couldn't find file: TextSampleDemoHelp.html");
-		}
+	private boolean tablePopulated() {
+		return model.resultData.getValue() != null && model.resultData.getValue().getRowCount() > 0;
 	}
 
 	@Override
@@ -215,23 +264,17 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 		return queryHandler.getPatcher(query, cursorPos).getCompletions();
 	}
 
-	public SettingsListener getAuthInfoSettingsListener() {
-		return new SettingsListener() {
+	private boolean checkCredentialsPlausible() {
+		boolean result = !(StringUtil.emptyOrNull(model.clientSecret.getValue())
+				|| StringUtil.emptyOrNull(model.clientId.getValue()));
 
-			@Override
-			public void onChanged(String value, String key) {
-				if (credentialsPlausible()) 
-					resetConnector();
-			}
+		if (!result)
+			logging.Info("incomplete authentication credentials");
 
-			private boolean credentialsPlausible() {
-				return !(StringUtil.emptyOrNull(model.clientSecret.getValue())
-						|| StringUtil.emptyOrNull(model.clientId.getValue()));
-			}
-		};
+		return result;
 	}
-	
-	private void resetConnector() {
+
+	public void resetConnector() {
 		Dictionary<String, String> credentials = new Hashtable<String, String>();
 		credentials.put(ClientSettings.keyClientSecret, model.clientSecret.getValue());
 		credentials.put(ClientSettings.keyClientId, model.clientId.getValue());

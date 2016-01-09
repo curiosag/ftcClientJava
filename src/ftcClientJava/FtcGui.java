@@ -7,8 +7,6 @@ import javax.swing.event.ChangeListener;
 import javax.swing.table.TableModel;
 import javax.swing.text.Document;
 import cg.common.check.Check;
-import cg.common.core.AbstractLogger;
-import cg.common.core.DelegatingLogger;
 import cg.common.interfaces.AbstractKeyListener;
 import cg.common.interfaces.OnValueChangedEvent;
 import cg.common.misc.SimpleObservable;
@@ -17,7 +15,6 @@ import ftcQueryEditor.QueryEditor;
 import interfaces.SyntaxElementSource;
 import interfaces.CompletionsSource;
 import interfaces.SettingsListener;
-import manipulations.QueryHandler;
 import net.miginfocom.swing.MigLayout;
 import structures.ClientSettings;
 import java.awt.*;
@@ -25,9 +22,10 @@ import java.awt.event.*;
 import java.util.Observable;
 import java.util.Observer;
 
-public class Gui extends JFrame implements ActionListener, Observer {
+public class FtcGui extends JFrame implements ActionListener {
 	private static final long serialVersionUID = 1L;
-
+	public static final Dimension dimensionButtons = new Dimension(50, 22);
+	
 	private QueryEditor queryEditor;
 
 	private JEditorPane opResult;
@@ -38,29 +36,27 @@ public class Gui extends JFrame implements ActionListener, Observer {
 
 	JSplitPane splitPaneH;
 	JSplitPane splitPaneV;
+	JPanel authPanel;
+	JButton buttonExecSql;
+	JButton buttonCancel;
+	JButton buttonReAuthenticate;
 
 	private JTable dataTable = null;
 
-	KeyboardActions keyActions = new KeyboardActions();
-
-	private final ActionListener controller;
 	private final SyntaxElementSource syntaxElements;
 	private final CompletionsSource completionsSource;
 	private final ClientSettings clientSettings;
+	private ActionListener passOnactionListener = null;
 
-	private final AbstractLogger logger;
-
-	public Gui(ActionListener controller, SyntaxElementSource syntaxElements, CompletionsSource completionsSource,
-			ClientSettings clientSettings, AbstractLogger logger) {
+	public FtcGui(SyntaxElementSource syntaxElements, CompletionsSource completionsSource,
+			ClientSettings clientSettings) {
 
 		this.syntaxElements = syntaxElements;
 		this.completionsSource = completionsSource;
-		this.controller = controller;
 		this.clientSettings = clientSettings;
-		this.logger = logger;
 
 		buildGui();
-		addKeyboardActions();
+		
 		this.addWindowListener(new WindowClosingListener() {
 
 			@Override
@@ -71,6 +67,16 @@ public class Gui extends JFrame implements ActionListener, Observer {
 
 	}
 
+	public void setActionListener(ActionListener l)
+	{
+		passOnactionListener = l;
+	}
+
+	@Override // ActionListener
+	public void actionPerformed(ActionEvent e) {
+		getPassOnactionListener().actionPerformed(e);
+	}
+	
 	private void writeClientSettings() {
 		clientSettings.clientId = textFieldClientId.getText();
 		clientSettings.clientSecret = String.valueOf(textFieldClientSecret.getPassword());
@@ -88,33 +94,24 @@ public class Gui extends JFrame implements ActionListener, Observer {
 		return ((SpinnerNumberModel) fieldDefaultLimit.getModel()).getNumber().intValue();
 	};
 
-	private AbstractAction getAction(String name, String actionId) {
+	private AbstractAction getAction(String name, final String actionId) {
 		return new AbstractAction(name) {
 			private static final long serialVersionUID = 1L;
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				controller.actionPerformed(new ActionEvent(e.getSource(), e.getID(), actionId));
+				getPassOnactionListener().actionPerformed(new ActionEvent(e.getSource(), e.getID(), actionId));
 			}
 		};
-	}
-
-	private void addKeyboardActions() {
-		keyActions.add(KeyEvent.VK_LEFT, KeyEvent.ALT_MASK, getAction("", Const.prev));
-		keyActions.add(KeyEvent.VK_RIGHT, KeyEvent.ALT_MASK, getAction("", Const.next));
-
-		keyActions.add(KeyEvent.VK_F3, 0, getAction("", Const.listTables));
-		keyActions.add(KeyEvent.VK_F4, 0, getAction("", Const.preview));
-		keyActions.add(KeyEvent.VK_F5, 0, getAction("", Const.execSql));
 	}
 
 	public void addQueryTextKeyListener(AbstractKeyListener k) {
 		queryEditor.addKeyListener(k);
 	}
 
-	private ActionListener getController() {
-		Check.notNull(controller);
-		return controller;
+	private ActionListener getPassOnactionListener() {
+		Check.notNull(passOnactionListener);
+		return passOnactionListener;
 	}
 
 	public Document opResultDocument() {
@@ -152,10 +149,9 @@ public class Gui extends JFrame implements ActionListener, Observer {
 
 			@Override
 			public void update(Observable o, Object arg) {
-				Check.isTrue(o instanceof SimpleObservable);
-				SimpleObservable<?> s = (SimpleObservable<?>) o;
-				Check.isTrue(s.getValue() instanceof TableModel);
-				TableModel model = (TableModel) s.getValue();
+				Object value = SimpleObservable.getValue(o);
+				Check.isTrue(value instanceof TableModel);
+				TableModel model = (TableModel) value;
 				dataTable.setModel(model);
 			}
 		};
@@ -218,43 +214,40 @@ public class Gui extends JFrame implements ActionListener, Observer {
 	}
 
 	private void setMenu() {
+		int ctrl = ActionEvent.CTRL_MASK;
+		int alt = ActionEvent.ALT_MASK;
+		int none = 0;
+		
 		JMenuBar menuBar = new JMenuBar();
 
-		JMenu menu = new JMenu("File");
-		menu.setMnemonic(KeyEvent.VK_F);
-
-		menu.add(createMenuItem(KeyEvent.VK_O, getAction("Open", Const.fileOpen)));
-		menu.add(createMenuItem(KeyEvent.VK_S, getAction("Save", Const.fileSave)));
-		menu.add(createMenuItem(KeyEvent.VK_E, createExportCsvAction("Export")));
-
-		menuBar.add(menu);
+		JMenu fileMenu = new JMenu("File");
+		fileMenu.setMnemonic(KeyEvent.VK_F);
+		fileMenu.add(createMenuItem(KeyEvent.VK_O, KeyEvent.VK_O, ctrl, getAction("Open", Const.fileOpen)));
+		fileMenu.add(createMenuItem(KeyEvent.VK_S, KeyEvent.VK_S, ctrl,getAction("Save", Const.fileSave)));
+		fileMenu.add(createMenuItem(KeyEvent.VK_E, KeyEvent.VK_E, ctrl,getAction(Const.tooltipExportCsv, Const.exportCsv)));
+		menuBar.add(fileMenu);
+		
 		menuBar.add(queryEditor.getMenu());
+		
+		JMenu runMenu = new JMenu("Run");
+		runMenu.setMnemonic(KeyEvent.VK_R);
+		runMenu.add(createMenuItem(KeyEvent.VK_F5, KeyEvent.VK_M, alt, getAction(Const.tooltipMemorizeCommand, Const.memorizeCommand)));
+		runMenu.add(createMenuItem(KeyEvent.VK_F4, KeyEvent.VK_V, none, getAction(Const.tooltipViewPreprocessedQuery, Const.viewPreprocessedQuery)));
+		runMenu.add(createMenuItem(KeyEvent.VK_F5, KeyEvent.VK_E, none, getAction(Const.tooltipExecSql, Const.execSql)));
+		runMenu.add(createMenuItem(KeyEvent.VK_F5, KeyEvent.VK_C, ctrl, getAction(Const.tooltipCancelExecSql, Const.cancelExecSql)));
+		runMenu.add(createMenuItem(KeyEvent.VK_F3, KeyEvent.VK_L, none, getAction(Const.tooltipListTables, Const.listTables)));
+		runMenu.add(createMenuItem(KeyEvent.VK_LEFT, KeyEvent.VK_P, alt, getAction(Const.tooltipPreviousCommand, Const.previousCommand)));
+		runMenu.add(createMenuItem(KeyEvent.VK_RIGHT, KeyEvent.VK_N, alt, getAction(Const.tooltipNextCommand, Const.nextCommand)));
+		menuBar.add(runMenu);
+			
 		setJMenuBar(menuBar);
 		menuBar.setVisible(true);
 	}
 
-	private Action createExportCsvAction(String name) {
-		return new AbstractAction(name) {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (tablePopulated())
-					controller.actionPerformed(new ActionEvent(dataTable.getModel(), e.getID(), Const.exportCsv));
-				else
-					logger.Info("no data to export");
-			}
-
-			private boolean tablePopulated() {
-				return dataTable != null && dataTable.getModel() != null && dataTable.getModel().getRowCount() > 0;
-			}
-		};
-	}
-
-	private JMenuItem createMenuItem(int keyEvent, Action action) {
+	private JMenuItem createMenuItem(int keyEvent, int mnemonic, int keyMask, Action action) {
 		JMenuItem result = new JMenuItem(action);
-		result.setAccelerator(KeyStroke.getKeyStroke(keyEvent, ActionEvent.CTRL_MASK));
-		result.setMnemonic(keyEvent);
+		result.setAccelerator(KeyStroke.getKeyStroke(keyEvent, keyMask));
+		result.setMnemonic(mnemonic);
 		return result;
 	}
 
@@ -272,34 +265,29 @@ public class Gui extends JFrame implements ActionListener, Observer {
 		return editorPane;
 	}
 
-	public static void runDeferred(Runnable r) {
-		SwingUtilities.invokeLater(r);
-	}
-
 	private JPanel createButtonArea() {
 
-		JButton buttonExecSql = createButton(Const.execSql, "control_play_blue.png", "execute command (F5)");
-		JButton buttonListTables = createButton(Const.listTables, "table.png", "list tables (F3)");
-		JButton buttonPreview = createButton(Const.preview, "control_play.png", "view preprocessed query (F4)");
-		JButton buttonPrevCmd = createButton(Const.prev, "control_rewind_blue.png", "previous command (Alt+left)");
-		JButton buttonNextCmd = createButton(Const.next, "control_fastforward_blue.png", "next command (Alt+right)");
-		JButton buttonExportCsvCmd = createButton(Const.exportCsv, "report_disk.png", "export csv (Ctrl+E)");
-		buttonExportCsvCmd.setAction(createExportCsvAction(""));
-		buttonExportCsvCmd.setIcon(createIcon("report_disk.png")); 
-		buttonExportCsvCmd.setToolTipText("export csv (Ctrl+E)");
+		buttonExecSql = createButton(Const.execSql, "control_play_blue.png", Const.tooltipExecSql);
+		buttonCancel = createButton(Const.cancelExecSql, "cancel.png", Const.tooltipCancelExecSql);
+		JButton buttonListTables = createButton(Const.listTables, "table.png", Const.tooltipListTables);
+		JButton buttonPreview = createButton(Const.viewPreprocessedQuery, "control_play.png", Const.tooltipViewPreprocessedQuery);
+		JButton buttonPrevCmd = createButton(Const.previousCommand, "control_rewind_blue.png", Const.tooltipPreviousCommand);
+		JButton buttonNextCmd = createButton(Const.nextCommand, "control_fastforward_blue.png", Const.tooltipNextCommand);
+		JButton buttonRememberCmd = createButton(Const.memorizeCommand, "page_white_edit.png", Const.tooltipMemorizeCommand);	
+		JButton buttonExportCsvCmd = createButton(Const.exportCsv, "page_save.png", Const.tooltipExportCsv);
 
-		JPanel buttonPane = new JPanel(new FlowLayout());
+		JPanel buttonPane = new JPanel(new MigLayout());
 
-		buttonPane.setLayout(new BoxLayout(buttonPane, BoxLayout.X_AXIS));
-
-		buttonPane.add(createSpacer(30));
-		addButton(buttonPrevCmd, buttonPane);
-		addButton(buttonPreview, buttonPane);
-		addButton(buttonExecSql, buttonPane);
-		addButton(buttonNextCmd, buttonPane);
-		addButton(buttonListTables, buttonPane);
-		buttonPane.add(createSpacer(30));
-		addButton(buttonExportCsvCmd, buttonPane);
+		buttonPane.add(createSpacer(20));
+		buttonPane.add(buttonPrevCmd);
+		buttonPane.add(buttonPreview);
+		buttonPane.add(buttonExecSql);
+		buttonPane.add(buttonCancel);
+		buttonPane.add(buttonNextCmd);
+		buttonPane.add(buttonListTables);
+		buttonPane.add(createSpacer(20));
+		buttonPane.add(buttonRememberCmd);
+		buttonPane.add(buttonExportCsvCmd);
 
 		buttonPane.setBorder(BorderFactory.createEmptyBorder(0, 2, 2, 0));
 
@@ -316,6 +304,7 @@ public class Gui extends JFrame implements ActionListener, Observer {
 		b.addActionListener(this);
 		b.setActionCommand(actionCommand);
 		b.setToolTipText(tipText);
+		b.setMaximumSize(dimensionButtons);
 		return b;
 	}
 
@@ -323,30 +312,25 @@ public class Gui extends JFrame implements ActionListener, Observer {
 		return new ImageIcon(getClass().getResource(iconUrl));
 	}
 
-	private void addButton(JButton buttonPrevCmd, JPanel buttonPane) {
-		buttonPane.add(buttonPrevCmd);
-		buttonPane.add(createSpacer(5));
-	}
-
 	private JPanel createSettingsArea() {
 		textFieldClientId = new JTextField(35);
 		textFieldClientSecret = new JPasswordField(35);
 		textFieldClientSecret.setEchoChar('*');
-		JButton buttonReauth = createButton(Const.reauthenticate, "arrow_refresh.png", "re-authenticate");
-		buttonReauth.setMaximumSize(new Dimension(30, 20));
+		buttonReAuthenticate = createButton(Const.reauthenticate, "arrow_refresh.png", Const.tooltipReAuthenticate);
+		buttonReAuthenticate.setMaximumSize(dimensionButtons);
 		SpinnerNumberModel numberModel = new SpinnerNumberModel(clientSettings.defaultQueryLimit, 0, 100000, 1);
 		fieldDefaultLimit = new JSpinner(numberModel);
 		NumberEditor editor = new JSpinner.NumberEditor(fieldDefaultLimit);
 		fieldDefaultLimit.setEditor(editor);
 		numberModel.addChangeListener(createDefaultLimitChangeListener());
 
-		JPanel resultPane = new JPanel(new MigLayout("wrap 2"));
+		authPanel = new JPanel(new MigLayout("wrap 2"));
+		
+		authPanel.add(new JLabel("Client Id"));
+		authPanel.add(buttonReAuthenticate, "gapleft 145");
+		authPanel.add(textFieldClientId, "span 2");
 
-		resultPane.add(new JLabel("Client Id"));
-		resultPane.add(buttonReauth, "gapleft 155");
-		resultPane.add(textFieldClientId, "span 2");
-
-		resultPane.add(new JLabel("Client Secret"));
+		authPanel.add(new JLabel("Client Secret"));
 
 		JCheckBox view = new JCheckBox("show");
 		view.addItemListener(new ItemListener() {
@@ -356,19 +340,16 @@ public class Gui extends JFrame implements ActionListener, Observer {
 			}
 		});
 
-		resultPane.add(view);
+		authPanel.add(view);
 
-		resultPane.add(textFieldClientSecret, "span 2");
+		authPanel.add(textFieldClientSecret, "span 2");
 
-		resultPane.add(new JLabel("Query Limit"));
-		resultPane.add(fieldDefaultLimit);
+		authPanel.add(new JLabel("Query Limit"));
+		authPanel.add(fieldDefaultLimit);
 		fieldDefaultLimit.setMinimumSize(new Dimension(100, 18));
 
-		textFieldClientId.setText(clientSettings.clientId);
-		textFieldClientSecret.setText(clientSettings.clientSecret);
-
-		resultPane.setBorder(BorderFactory.createEmptyBorder(2, 2, 0, 2));
-		return resultPane;
+		authPanel.setBorder(BorderFactory.createEmptyBorder(2, 2, 0, 2));
+		return authPanel;
 	}
 
 	private ChangeListener createDefaultLimitChangeListener() {
@@ -401,50 +382,15 @@ public class Gui extends JFrame implements ActionListener, Observer {
 		return resultPane;
 	}
 
-	private void onStructureChanged() {
-
-	}
-
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		getController().actionPerformed(e);
-	}
-
-	@Override
-	public void update(Observable o, Object arg) {
-		if (o instanceof QueryHandler)
-			runDeferred(new Runnable() {
-
-				@Override
-				public void run() {
-					onStructureChanged();
-				}
-			});
-	}
-
 	public Document queryTextDocument() {
 		return queryEditor.getDocument();
 	}
-
-	public void addAuthInfoSettingsListener(SettingsListener l) {
-		addSettingsChangedListener(textFieldClientId, l);
-		addSettingsChangedListener(textFieldClientSecret, l);
-	}
 	
-	private void addSettingsChangedListener(JTextField textField, SettingsListener l) {
-		Observism.addValueChangedListener(textField, new OnValueChangedEvent(){
-
-			@Override
-			public void notify(JTextField field) {
-				l.onChanged(textField.getText(), textField.getName());
-			}});
-	}	
-	
-	static Gui createAndShowGUI(ActionListener controller, SyntaxElementSource s, CompletionsSource c,
-			ClientSettings clientSettings, DelegatingLogger logging) {
+	static FtcGui createAndShowGUI(SyntaxElementSource s, CompletionsSource c,
+			ClientSettings clientSettings) {
 		UIManager.put("swing.boldMetal", Boolean.FALSE);
 
-		Gui result = new Gui(controller, s, c, clientSettings, logging);
+		FtcGui result = new FtcGui(s, c, clientSettings);
 		result.setPreferredSize(new Dimension(clientSettings.width, clientSettings.height));
 		result.setLocation(clientSettings.x, clientSettings.y);
 

@@ -36,7 +36,7 @@ public class FtcAutoComplete {
 
 	private final static List<Completion> emptyCompletions = new LinkedList<Completion>();
 
-	public FtcAutoComplete(SyntaxElementSource syntaxElementSource, CompletionsSource completionsSource) {
+	public FtcAutoComplete(final SyntaxElementSource syntaxElementSource, final CompletionsSource completionsSource) {
 
 		schemaElementProvider = new FtcCompletionProvider(syntaxElementSource, completionsSource, schemaElementTypes);
 		nonSchemaElementProvider = new FtcCompletionProvider(syntaxElementSource, completionsSource, nonSchemaElementTypes);
@@ -58,15 +58,15 @@ public class FtcAutoComplete {
 
 				List<Completion> result;
 				
-				if (canPopulate(param.getName()))
-					result = new FtcCompletionProvider(syntaxElementSource, completionsSource, emptySchemaElementTypes).getParameterCompletions(tc);
+				if (isSchemaParameter(param.getName()))
+					result = new FtcCompletionProvider(syntaxElementSource, completionsSource, emptySchemaElementTypes).getSchemaValueCompletions(tc);
 				else
 					result = emptyCompletions;
 				
 				return result;
 			}
 
-			private boolean canPopulate(String name) {
+			private boolean isSchemaParameter(String name) {
 				return name.equals(Const.paramNameTable) || name.startsWith(Const.paramNameColumn);
 			}
 		};
