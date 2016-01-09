@@ -40,6 +40,7 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 
 import cg.common.check.Check;
 import cg.common.swing.UnderlineHighlightPainter;
+import ftcClientCodeCompletionExperiments.FtcAutoComplete;
 import ftcClientJava.Const;
 import gc.common.structures.IntTuple;
 import interfaces.CompletionsSource;
@@ -73,7 +74,7 @@ public class QueryEditor extends JRootPane implements SyntaxConstants {
 		queryText.setMarkOccurrences(false);
 		queryText.setHighlightCurrentLine(clientSettings.highlightCurrentLine);
 
-		queryText.setParserDelay(100);
+		queryText.setParserDelay(700);
 
 		scrollPane = new RTextScrollPane(queryText, false);
 		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);

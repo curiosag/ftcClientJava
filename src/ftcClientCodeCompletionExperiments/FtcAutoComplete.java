@@ -1,4 +1,4 @@
-package ftcQueryEditor;
+package ftcClientCodeCompletionExperiments;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -15,6 +15,9 @@ import org.fife.ui.autocomplete.ShorthandCompletion;
 import org.fife.ui.autocomplete.TemplateCompletion;
 
 import org.fife.ui.autocomplete.ParameterizedCompletion.Parameter;
+
+import ftcQueryEditor.FtcCompletionProvider;
+
 import org.fife.ui.autocomplete.RoundRobinAutoCompletion;
 
 import interfaces.SqlCompletionType;
