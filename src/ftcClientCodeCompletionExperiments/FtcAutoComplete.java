@@ -113,7 +113,7 @@ public class FtcAutoComplete {
 		subs.add(new BasicCompletion(provider, "b"));
 		subs.add(new BasicCompletion(provider, "s2"));
 		subs.add(new BasicCompletion(provider, "s3"));
-		provider.addCompletion(new BasicCompletion(provider, "s", "", subs));
+		provider.addCompletion(new BasicCompletion(provider, "s", "", null));
 
 		// Add completions for all Java keywords. A BasicCompletion is just
 		// a straightforward word completion.

@@ -32,7 +32,6 @@ public class EventBusExperiments {
 			System.out.println("dead event: " + deadEvent.getSource().toString());
 		}
 
-		
 		public static DeadEventSubscriber create(){
 			return new DeadEventSubscriber(); 
 		}

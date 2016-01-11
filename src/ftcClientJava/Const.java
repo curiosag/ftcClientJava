@@ -13,17 +13,17 @@ public class Const {
 	public static final String previousCommand = "previousCommand";
 	public static final String cancelExecSql = "cancelExecution";
 	public static final String changeAuthInfo = "changeAuthInfo";
-	public static final String memorizeCommand = "memorizeCommand";
+	public static final String memorizeQuery = "memorizeQuery";
 	
-	public static final String tooltipExecSql = "Execute command";
+	public static final String tooltipExecSql = "Execute query";
 	public static final String tooltipListTables = "List tables";
 	public static final String tooltipViewPreprocessedQuery = "View preprocessed query";
-	public static final String tooltipPreviousCommand = "Previous command";
-	public static final String tooltipNextCommand = "Next command";
+	public static final String tooltipPreviousCommand = "Previous query";
+	public static final String tooltipNextCommand = "Next query";
 	public static final String tooltipExportCsv = "Export csv";
 	public static final String tooltipReAuthenticate = "Re-authenticate";
 	public static final String tooltipCancelExecSql = "Cancel execution";
-	public static final String tooltipMemorizeCommand = "Memorize command";
+	public static final String tooltipMemorizeQuery = "Memorize query";
 	
 	public static final String languageId = "text/ftSql";
 	public static final String tokenizerClassId = "ftcQueryEditor.FtSQLTokenMaker";

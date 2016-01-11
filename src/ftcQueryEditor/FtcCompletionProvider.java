@@ -31,8 +31,9 @@ public class FtcCompletionProvider extends DefaultCompletionProvider implements 
 	private SqlCompletionType[] completionTypes;
 
 	private static final SqlCompletionType[] schemaCompletions = { SqlCompletionType.table, SqlCompletionType.column };
-	
-	public FtcCompletionProvider(SyntaxElementSource syntaxElementSource, CompletionsSource completionsSource, SqlCompletionType... types) {
+
+	public FtcCompletionProvider(SyntaxElementSource syntaxElementSource, CompletionsSource completionsSource,
+			SqlCompletionType... types) {
 		this.completionsSource = completionsSource;
 		this.syntaxElementSource = syntaxElementSource;
 		this.completionTypes = types;
@@ -72,23 +73,35 @@ public class FtcCompletionProvider extends DefaultCompletionProvider implements 
 	}
 
 	private int recentCaretPosition = -1;
+	private String recentQuery = null;
 
+	
+	
 	private void resetCompletions(JTextComponent comp) {
-		String text = comp.getText();
+	
+		
+		String query = comp.getText();
 		int caretPosition = comp.getCaretPosition();
-			
-		if (StringUtil.emptyOrNull(text) || recentCaretPosition < 0 || (Math.abs(caretPosition - recentCaretPosition)) > 1)
-		{
-			Completions externalCompletions = completionsSource.get(text, caretPosition);
+
+		if (StringUtil.emptyOrNull(query) || cursorMoved(caretPosition) || queryChanged(query)) {
+			Completions externalCompletions = completionsSource.get(query, caretPosition);
 			clear();
 			for (AbstractCompletion c : externalCompletions.getAll())
 				addCompletion(c);
 		}
-		
+
 		recentCaretPosition = caretPosition;
+		recentQuery = query;
 	}
 
-	
+	private boolean queryChanged(String text) {
+		return !text.equals(recentQuery);
+	}
+
+	private boolean cursorMoved(int caretPosition) {
+		return recentCaretPosition < 0 || (Math.abs(caretPosition - recentCaretPosition)) >= 1;
+	}
+
 	private void addCompletion(AbstractCompletion c) {
 		if (completionTypes.length == 0 || Op.in(c.completionType, completionTypes))
 			addCompletion(createCompletion(this, c));
@@ -105,7 +118,7 @@ public class FtcCompletionProvider extends DefaultCompletionProvider implements 
 		int caretPosition = comp.getCaretPosition();
 
 		for (AbstractCompletion c : completionsSource.get(text, caretPosition).getAll())
-			if (Op.in(c.completionType, schemaCompletions)) 
+			if (Op.in(c.completionType, schemaCompletions))
 				result.add(new BasicCompletion(this, c.displayName));
 
 		return result;
@@ -113,25 +126,10 @@ public class FtcCompletionProvider extends DefaultCompletionProvider implements 
 
 	public static org.fife.ui.autocomplete.AbstractCompletion createCompletion(CompletionProvider provider,
 			AbstractCompletion c) {
-		if (Op.in(c.completionType, schemaCompletions) || ! c.hasParameter())
-			return new BasicCompletion(provider, c.getPatch(), null,
-					getSubCompletions(provider, c.children));
+		if (Op.in(c.completionType, schemaCompletions) || !c.hasParameter())
+			return new BasicCompletion(provider, c.getPatch());
 		else
 			return new TemplateCompletion(provider, c.displayName, c.displayName, c.getPatch());
-
-	}
-
-	private static List<Completion> getSubCompletions(CompletionProvider provider, List<AbstractCompletion> children) {
-		List<Completion> result = new LinkedList<Completion>();
-
-		for (AbstractCompletion c : children) {
-			Completion item = new BasicCompletion(provider, c.getPatch(), c.displayName,
-					getSubCompletions(provider, c.children));
-
-			result.add(item);
-		}
-
-		return result;
 	}
 
 	@Override

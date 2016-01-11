@@ -23,17 +23,15 @@ import cg.common.threading.Function;
 import interfaces.CompletionsSource;
 import interfaces.Connector;
 import interfaces.OnFileAction;
-import interfaces.SettingsListener;
 import interfaces.SyntaxElementSource;
 import interfaces.SyntaxElement;
 import manipulations.QueryHandler;
-import manipulations.QueryPatching;
 import structures.ClientSettings;
 import structures.Completions;
 import structures.QueryResult;
-import structures.TableInfo;
+import uglySmallThings.AsyncWork;
 import uglySmallThings.CSV;
-import uglySmallThings.Workers;
+import uglySmallThings.Events;
 import util.StringUtil;
 
 public class ftcClientController implements ActionListener, SyntaxElementSource, CompletionsSource {
@@ -44,7 +42,7 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 	private final ClientSettings clientSettings;
 	private final Connector connector;
 
-	private SwingWorker<QueryResult, Object> executionWorker = Workers.createEmptyWorker();
+	private SwingWorker<QueryResult, Object> executionWorker = AsyncWork.createEmptyWorker();
 	private final CmdHistory history;
 	private final CmdDestination historyScrollDestination = new CmdDestination() {
 		@Override
@@ -71,10 +69,13 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 		Check.isFalse(isExecuting && value);
 		isExecuting = value;
 		if (isExecuting) {
+			Events.ui.post(Thread.State.RUNNABLE);
 			executionStopwatch.reset();
 			executionStopwatch.start();
-		} else
+		} else {
 			executionStopwatch.stop();
+			Events.ui.post(Thread.State.TERMINATED);
+		}
 	}
 
 	private boolean getStateIsExecuting() {
@@ -103,10 +104,10 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 			logging.Info(queryHandler.previewExecutedSql(model.queryText.getValue()));
 			break;
 
-		case Const.memorizeCommand:
+		case Const.memorizeQuery:
 			hdlRememberCommand();
-			break;	
-			
+			break;
+
 		case Const.previousCommand:
 			history.prev(historyScrollDestination);
 			break;
@@ -153,7 +154,7 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 	}
 
 	private void hdlExecSql() {
-		executionWorker = Workers.goUnderground(new Function<QueryResult>() {
+		executionWorker = AsyncWork.goUnderground(new Function<QueryResult>() {
 			@Override
 			public QueryResult invoke() {
 				setStateIsExecuting(true);
@@ -177,7 +178,7 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 		String sql = model.queryText.getValue();
 
 		history.add(sql);
-		
+
 		return queryHandler.getQueryResult(sql);
 	}
 

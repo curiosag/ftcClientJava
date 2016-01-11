@@ -1,7 +1,6 @@
 package ftcQueryEditor;
 
 import java.util.List;
-
 import org.fife.ui.rsyntaxtextarea.RSyntaxDocument;
 import org.fife.ui.rsyntaxtextarea.parser.AbstractParser;
 import org.fife.ui.rsyntaxtextarea.parser.DefaultParseResult;
@@ -11,6 +10,7 @@ import org.fife.ui.rsyntaxtextarea.parser.ParserNotice.Level;
 
 import cg.common.check.Check;
 import cg.common.swing.DocumentUtil;
+import interfaces.Event;
 import interfaces.SyntaxElement;
 import interfaces.SyntaxElementSource;
 import interfaces.SyntaxElementType;
@@ -18,21 +18,28 @@ import interfaces.SyntaxElementType;
 public class GftParser extends AbstractParser {
 
 	private SyntaxElementSource syntaxElementSource;
-	
-	public GftParser(SyntaxElementSource syntaxElementSource)
-	{
+
+	private final Event onStartParsing;
+	private final Event onFinishParsing;
+
+	public GftParser(SyntaxElementSource syntaxElementSource, Event onStartParsing, Event onFinishParsing) {
 		Check.notNull(syntaxElementSource);
+		this.onStartParsing = onStartParsing;
+		this.onFinishParsing = onFinishParsing;
 		this.syntaxElementSource = syntaxElementSource;
 		setEnabled(true);
 	}
-	
+
 	@Override
 	public ParseResult parse(RSyntaxDocument doc, String style) {
 		DefaultParseResult result = new DefaultParseResult(this);
+		onStartParsing();
 		List<SyntaxElement> elements = syntaxElementSource.get(DocumentUtil.getText(doc));
 		
-		for (SyntaxElement e : elements) 
+		for (SyntaxElement e : elements)
 			maybeAddNotice(result, e);
+		
+		onFinishParsing();
 		
 		return result;
 	}
@@ -48,6 +55,16 @@ public class GftParser extends AbstractParser {
 		DefaultParserNotice notice = new DefaultParserNotice(this, null, -1, e.from, e.value.length());
 		notice.setLevel(level);
 		result.addNotice(notice);
+	}
+
+	public void onStartParsing() {
+		if (onStartParsing != null)
+			onStartParsing.fire();
+	}
+
+	public void onFinishParsing() {
+		if (onFinishParsing != null)
+			onFinishParsing.fire();
 	}
 
 }

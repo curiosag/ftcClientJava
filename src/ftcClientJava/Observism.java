@@ -50,7 +50,7 @@ public class Observism {
 				SwingUtilities.invokeLater(new Runnable(){
 					@Override
 					public void run() {
-						f.setText(TextModel.fromObservable(o));		
+						f.setText(TextModel.fromObservable(o));
 					}});
 			}
 		};

@@ -17,6 +17,8 @@ import interfaces.CompletionsSource;
 import interfaces.SettingsListener;
 import net.miginfocom.swing.MigLayout;
 import structures.ClientSettings;
+import uglySmallThings.Events;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Observable;
@@ -24,7 +26,7 @@ import java.util.Observer;
 
 public class FtcGui extends JFrame implements ActionListener {
 	private static final long serialVersionUID = 1L;
-	public static final Dimension dimensionButtons = new Dimension(50, 22);
+	public static final Dimension dimensionButtons = new Dimension(45, 22);
 	
 	private QueryEditor queryEditor;
 
@@ -231,7 +233,7 @@ public class FtcGui extends JFrame implements ActionListener {
 		
 		JMenu runMenu = new JMenu("Run");
 		runMenu.setMnemonic(KeyEvent.VK_R);
-		runMenu.add(createMenuItem(KeyEvent.VK_F5, KeyEvent.VK_M, alt, getAction(Const.tooltipMemorizeCommand, Const.memorizeCommand)));
+		runMenu.add(createMenuItem(KeyEvent.VK_F5, KeyEvent.VK_M, alt, getAction(Const.tooltipMemorizeQuery, Const.memorizeQuery)));
 		runMenu.add(createMenuItem(KeyEvent.VK_F4, KeyEvent.VK_V, none, getAction(Const.tooltipViewPreprocessedQuery, Const.viewPreprocessedQuery)));
 		runMenu.add(createMenuItem(KeyEvent.VK_F5, KeyEvent.VK_E, none, getAction(Const.tooltipExecSql, Const.execSql)));
 		runMenu.add(createMenuItem(KeyEvent.VK_F5, KeyEvent.VK_C, ctrl, getAction(Const.tooltipCancelExecSql, Const.cancelExecSql)));
@@ -261,7 +263,7 @@ public class FtcGui extends JFrame implements ActionListener {
 	private JEditorPane createEditorPane() {
 		JEditorPane editorPane = new JEditorPane();
 		editorPane.setEditable(true);
-
+		editorPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
 		return editorPane;
 	}
 
@@ -271,21 +273,25 @@ public class FtcGui extends JFrame implements ActionListener {
 		buttonCancel = createButton(Const.cancelExecSql, "cancel.png", Const.tooltipCancelExecSql);
 		JButton buttonListTables = createButton(Const.listTables, "table.png", Const.tooltipListTables);
 		JButton buttonPreview = createButton(Const.viewPreprocessedQuery, "control_play.png", Const.tooltipViewPreprocessedQuery);
-		JButton buttonPrevCmd = createButton(Const.previousCommand, "control_rewind_blue.png", Const.tooltipPreviousCommand);
-		JButton buttonNextCmd = createButton(Const.nextCommand, "control_fastforward_blue.png", Const.tooltipNextCommand);
-		JButton buttonRememberCmd = createButton(Const.memorizeCommand, "page_white_edit.png", Const.tooltipMemorizeCommand);	
+		JButton buttonPrevCmd = createButton(Const.previousCommand, "arrow_left.png", Const.tooltipPreviousCommand);
+		JButton buttonNextCmd = createButton(Const.nextCommand, "arrow_right.png", Const.tooltipNextCommand);
+		JButton buttonRememberCmd = createButton(Const.memorizeQuery, "page_white_edit.png", Const.tooltipMemorizeQuery);	
 		JButton buttonExportCsvCmd = createButton(Const.exportCsv, "page_save.png", Const.tooltipExportCsv);
 
 		JPanel buttonPane = new JPanel(new MigLayout());
 
-		buttonPane.add(createSpacer(20));
+		final int spacerWidht = 15;
+		buttonPane.add(createSpacer(spacerWidht));
 		buttonPane.add(buttonPrevCmd);
+		buttonPane.add(buttonNextCmd);
+		buttonPane.add(createSpacer(spacerWidht));
+		
 		buttonPane.add(buttonPreview);
 		buttonPane.add(buttonExecSql);
 		buttonPane.add(buttonCancel);
-		buttonPane.add(buttonNextCmd);
 		buttonPane.add(buttonListTables);
-		buttonPane.add(createSpacer(20));
+		
+		buttonPane.add(createSpacer(spacerWidht));
 		buttonPane.add(buttonRememberCmd);
 		buttonPane.add(buttonExportCsvCmd);
 
@@ -313,8 +319,8 @@ public class FtcGui extends JFrame implements ActionListener {
 	}
 
 	private JPanel createSettingsArea() {
-		textFieldClientId = new JTextField(35);
-		textFieldClientSecret = new JPasswordField(35);
+		textFieldClientId = new JTextField(26);
+		textFieldClientSecret = new JPasswordField(26);
 		textFieldClientSecret.setEchoChar('*');
 		buttonReAuthenticate = createButton(Const.reauthenticate, "arrow_refresh.png", Const.tooltipReAuthenticate);
 		buttonReAuthenticate.setMaximumSize(dimensionButtons);
