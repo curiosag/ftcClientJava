@@ -6,7 +6,9 @@ import java.io.File;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.swing.SwingWorker;
 import com.google.common.base.Stopwatch;
@@ -28,6 +30,7 @@ import interfaces.SyntaxElement;
 import manipulations.QueryHandler;
 import structures.ClientSettings;
 import structures.Completions;
+import structures.ConnectionStatus;
 import structures.QueryResult;
 import uglySmallThings.AsyncWork;
 import uglySmallThings.CSV;
@@ -128,14 +131,9 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 			hdlExportCsvAction(e);
 			break;
 
-		case Const.changeAuthInfo:
+		case Const.authorize:
 			if (!getStateIsExecuting())
-				hdlChangeAuthInfo();
-			break;
-
-		case Const.reauthenticate:
-			if (!getStateIsExecuting())
-				hdlReauthenticate();
+				hdlAuthenticate();
 			break;
 
 		default:
@@ -146,11 +144,6 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 	private void hdlRememberCommand() {
 		history.add(model.queryText.getValue());
 		logging.Info("command memorized");
-	}
-
-	private void hdlChangeAuthInfo() {
-		if (checkCredentialsPlausible())
-			resetConnector();
 	}
 
 	private void hdlExecSql() {
@@ -197,7 +190,7 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 		logging.Info(msg + result.message.or(""));
 
 	}
-
+	
 	private void hdlCancelExecSql() {
 		if (executionWorker.isDone())
 			return;
@@ -209,11 +202,44 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 		setStateIsExecuting(false);
 	}
 
-	private void hdlReauthenticate() {
-		connector.clearStoredLoginData();
-		resetConnector();
-	}
+	private final Function<ConnectionStatus> authFunction = new Function<ConnectionStatus>() {
+		@Override
+		public ConnectionStatus invoke() {
+			return resetConnector();
+		}
+	};
 
+	private final Continuation<ConnectionStatus> authContinuation = new Continuation<ConnectionStatus>() {
+		@Override
+		public void invoke(ConnectionStatus value) {
+		}
+	};
+
+	private void hdlAuthenticate()
+	{
+		connector.clearStoredLoginData();
+		authenticate();
+	}
+	
+	public void authenticate() {
+		SwingWorker<ConnectionStatus, Object> connectionWorker = AsyncWork.goUnderground(authFunction, authContinuation);
+		setStateIsExecuting(true);
+		connectionWorker.execute();
+		logging.Info("attempting to authorize");
+		String msgAuthFailed = "authorization failed: ";
+		try {
+			ConnectionStatus result = connectionWorker.get(clientSettings.authTimeout, TimeUnit.SECONDS);
+			if (result.status == HttpStatus.SC_OK)
+				logging.Info("authorization succeeded");
+			else
+				logging.Info(msgAuthFailed + result.message.or("unknown reason"));
+		} catch (InterruptedException | ExecutionException | TimeoutException e) {
+			connectionWorker.cancel(true);
+			logging.Info(String.format("%s %s %s", msgAuthFailed, e.getClass().getSimpleName(), e.getMessage()));
+		}
+		setStateIsExecuting(false);
+	}
+	
 	private void hdlFileOpen() {
 		new FileAction("Open", clientSettings.pathScriptFile, null, new OnFileAction() {
 
@@ -275,11 +301,11 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 		return result;
 	}
 
-	public void resetConnector() {
+	private ConnectionStatus resetConnector() {
 		Dictionary<String, String> credentials = new Hashtable<String, String>();
 		credentials.put(ClientSettings.keyClientSecret, model.clientSecret.getValue());
 		credentials.put(ClientSettings.keyClientId, model.clientId.getValue());
-		queryHandler.reset(credentials);
+		return queryHandler.reset(credentials);
 	}
 
 }

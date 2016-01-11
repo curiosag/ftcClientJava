@@ -35,13 +35,14 @@ public class FtcGui extends JFrame implements ActionListener {
 	private JTextField textFieldClientId;
 	private JPasswordField textFieldClientSecret;
 	private JSpinner fieldDefaultLimit;
-
+    private JSpinner fieldAuthTimeout;
+    
 	JSplitPane splitPaneH;
 	JSplitPane splitPaneV;
 	JPanel authPanel;
 	JButton buttonExecSql;
 	JButton buttonCancel;
-	JButton buttonReAuthenticate;
+	JButton buttonAuthenticate;
 
 	private JTable dataTable = null;
 
@@ -88,12 +89,13 @@ public class FtcGui extends JFrame implements ActionListener {
 		clientSettings.y = getY();
 		clientSettings.width = getWidth();
 		clientSettings.height = getHeight();
-		clientSettings.defaultQueryLimit = getQueryLimit();
+		clientSettings.defaultQueryLimit = getNumber(fieldDefaultLimit);
+		clientSettings.authTimeout = getNumber(fieldAuthTimeout);
 		clientSettings.write();
 	}
 
-	private int getQueryLimit() {
-		return ((SpinnerNumberModel) fieldDefaultLimit.getModel()).getNumber().intValue();
+	private int getNumber(JSpinner num) {
+		return ((SpinnerNumberModel) num.getModel()).getNumber().intValue();
 	};
 
 	private AbstractAction getAction(String name, final String actionId) {
@@ -284,6 +286,7 @@ public class FtcGui extends JFrame implements ActionListener {
 		buttonPane.add(createSpacer(spacerWidht));
 		buttonPane.add(buttonPrevCmd);
 		buttonPane.add(buttonNextCmd);
+		buttonPane.add(buttonRememberCmd);
 		buttonPane.add(createSpacer(spacerWidht));
 		
 		buttonPane.add(buttonPreview);
@@ -292,7 +295,6 @@ public class FtcGui extends JFrame implements ActionListener {
 		buttonPane.add(buttonListTables);
 		
 		buttonPane.add(createSpacer(spacerWidht));
-		buttonPane.add(buttonRememberCmd);
 		buttonPane.add(buttonExportCsvCmd);
 
 		buttonPane.setBorder(BorderFactory.createEmptyBorder(0, 2, 2, 0));
@@ -319,43 +321,57 @@ public class FtcGui extends JFrame implements ActionListener {
 	}
 
 	private JPanel createSettingsArea() {
+		final int hightSpinners = 18;
+		
 		textFieldClientId = new JTextField(26);
 		textFieldClientSecret = new JPasswordField(26);
 		textFieldClientSecret.setEchoChar('*');
-		buttonReAuthenticate = createButton(Const.reauthenticate, "arrow_refresh.png", Const.tooltipReAuthenticate);
-		buttonReAuthenticate.setMaximumSize(dimensionButtons);
-		SpinnerNumberModel numberModel = new SpinnerNumberModel(clientSettings.defaultQueryLimit, 0, 100000, 1);
-		fieldDefaultLimit = new JSpinner(numberModel);
-		NumberEditor editor = new JSpinner.NumberEditor(fieldDefaultLimit);
-		fieldDefaultLimit.setEditor(editor);
-		numberModel.addChangeListener(createDefaultLimitChangeListener());
-
-		authPanel = new JPanel(new MigLayout("wrap 2"));
+		buttonAuthenticate = createButton(Const.authorize, "key.png", Const.tooltipAuthorize);
+		buttonAuthenticate.setMaximumSize(dimensionButtons);
+		SpinnerNumberModel defaultLimitNumberModel = createNumberModel(clientSettings.defaultQueryLimit, createDefaultLimitChangeListener());
+		fieldDefaultLimit = new JSpinner(defaultLimitNumberModel);
+		fieldDefaultLimit.setEditor(new JSpinner.NumberEditor(fieldDefaultLimit));
+		fieldAuthTimeout = new JSpinner(createNumberModel(clientSettings.authTimeout, createAuthTimeoutChangeListener()));
+		fieldAuthTimeout.setEditor(new JSpinner.NumberEditor(fieldAuthTimeout));
+		fieldAuthTimeout.setPreferredSize(new Dimension(30,hightSpinners));
 		
-		authPanel.add(new JLabel("Client Id"));
-		authPanel.add(buttonReAuthenticate, "gapleft 145");
-		authPanel.add(textFieldClientId, "span 2");
+		defaultLimitNumberModel.addChangeListener(createDefaultLimitChangeListener());
 
-		authPanel.add(new JLabel("Client Secret"));
-
-		JCheckBox view = new JCheckBox("show");
-		view.addItemListener(new ItemListener() {
+		ItemListener showPasswordListener = new ItemListener() {
 			@Override
 			public void itemStateChanged(ItemEvent e) {
 				setPasswordVisible(e.getStateChange() == ItemEvent.SELECTED);
 			}
-		});
+		};
+		
+		authPanel = new JPanel(new MigLayout("wrap 3"));
+		authPanel.add(buttonAuthenticate, "gapleft 5");
+		authPanel.add(new JLabel("Auth timeout"));
+		authPanel.add(fieldAuthTimeout);
+		
+		authPanel.add(textFieldClientId, "span 3");
+		
+		authPanel.add(new JLabel("Client id", createIcon("bullet_arrow_up.png"), JLabel.RIGHT));
+		authPanel.add(new JLabel("Client secret", createIcon("bullet_arrow_down.png"), JLabel.LEFT));
+		
+		JCheckBox view = new JCheckBox("show");
+		view.addItemListener(showPasswordListener);
+		authPanel.add(view, "wrap");
 
-		authPanel.add(view);
+		authPanel.add(textFieldClientSecret, "span 3");
 
-		authPanel.add(textFieldClientSecret, "span 2");
-
-		authPanel.add(new JLabel("Query Limit"));
-		authPanel.add(fieldDefaultLimit);
-		fieldDefaultLimit.setMinimumSize(new Dimension(100, 18));
+		authPanel.add(new JLabel("Query limit"));
+		authPanel.add(fieldDefaultLimit, "wrap");
+		fieldDefaultLimit.setMinimumSize(new Dimension(100, hightSpinners));
 
 		authPanel.setBorder(BorderFactory.createEmptyBorder(2, 2, 0, 2));
 		return authPanel;
+	}
+
+	private SpinnerNumberModel createNumberModel(int initValue, ChangeListener l) {
+		SpinnerNumberModel result = new SpinnerNumberModel(initValue, 0, 100000, 1);
+		result.addChangeListener(l);
+		return result;
 	}
 
 	private ChangeListener createDefaultLimitChangeListener() {
@@ -363,11 +379,21 @@ public class FtcGui extends JFrame implements ActionListener {
 
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				clientSettings.defaultQueryLimit = getQueryLimit();
+				clientSettings.defaultQueryLimit = getNumber(fieldDefaultLimit);
 			}
 		};
 	}
 
+	private ChangeListener createAuthTimeoutChangeListener() {
+		return new ChangeListener() {
+
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				clientSettings.authTimeout = getNumber(fieldAuthTimeout);
+			}
+		};
+	}
+	
 	private void setPasswordVisible(boolean value) {
 		if (value)
 			textFieldClientSecret.setEchoChar((char) 0);

@@ -21,6 +21,7 @@ import cg.common.io.logging.DelegatingOutputStream;
 import main.java.fusiontables.AuthInfo;
 import main.java.fusiontables.FusionTablesConnector;
 import structures.ClientSettings;
+import structures.ConnectionStatus;
 import interfaces.Connector;
 import test.MockConnector;
 
@@ -81,7 +82,7 @@ public class Client {
 				model.clientId.setValue(clientSettings.clientId);
 				model.clientSecret.setValue(clientSettings.clientSecret);
 
-				controller.resetConnector();
+				controller.authenticate();
 			}
 		};
 	}
