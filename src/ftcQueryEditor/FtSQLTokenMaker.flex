@@ -265,6 +265,7 @@ MLCEnd			= "*/"
 	"CREATE" | 
 	"DELETE" | 
 	"DROP" |
+	"DESCRIBE" | 
 	"FROM" | 
 	"GROUP" | 
 	"HAVING" | 
@@ -281,7 +282,9 @@ MLCEnd			= "*/"
 	"RENAME" | 
 	"SELECT" | 
 	"SET" | 
-	"TABLE" | 
+	"SHOW" | 
+	"TABLE" |
+	"TABLES" |  
 	"TO" | 
 	"UPDATE" | 
 	"VALUES" | 
