@@ -1,23 +1,148 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>ftcClientJava</groupId>
+	<groupId>org.cg.ftc</groupId>
 	<artifactId>ftcClientJava</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.1</version>
+	<properties>
+		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
+	</properties>
 	<build>
+		<finalName>ftc</finalName>
 		<sourceDirectory>src</sourceDirectory>
+		<resources>
+			<resource>
+				<directory>src/resources</directory>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.3</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>1.7</source>
+					<target>1.7</target>
 				</configuration>
 			</plugin>
+			<!-- Make this jar executable -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<mainClass>org.cg.ftc.ftcClientJava.Client</mainClass>
+							<classpathPrefix>dependency-jars/</classpathPrefix>
+						</manifest>
+						<manifestEntries>
+							<addClasspath>true</addClasspath>
+							<Class-Path>JavaCommon-0.1.jar</Class-Path>
+							<classpathPrefix>dependency-jars/</classpathPrefix>
+						</manifestEntries>
+						<manifestEntries>
+							<addClasspath>true</addClasspath>
+							<Class-Path>ftcShared-0.1.jar</Class-Path>
+							<classpathPrefix>dependency-jars/</classpathPrefix>
+						</manifestEntries>
+						<manifestEntries>
+							<addClasspath>true</addClasspath>
+							<Class-Path>ftcConnector-0.1.jar</Class-Path>
+							<classpathPrefix>dependency-jars/</classpathPrefix>
+						</manifestEntries>
+						<manifestEntries>
+							<addClasspath>true</addClasspath>
+							<Class-Path>ftcSql-0.1.jar</Class-Path>
+							<classpathPrefix>dependency-jars/</classpathPrefix>
+						</manifestEntries>
+						<manifestEntries>
+							<addClasspath>true</addClasspath>
+							<Class-Path>ftcParser-0.1.jar</Class-Path>
+							<classpathPrefix>dependency-jars/</classpathPrefix>
+						</manifestEntries>
+						<manifestEntries>
+							<addClasspath>true</addClasspath>
+							<Class-Path>bobbyLightRSyntaxTextArea-0.1.jar</Class-Path>
+							<classpathPrefix>dependency-jars/</classpathPrefix>
+						</manifestEntries>
+						<manifestEntries>
+							<addClasspath>true</addClasspath>
+							<Class-Path>bobbyLightAutocomplete-0.1.jar</Class-Path>
+							<classpathPrefix>dependency-jars/</classpathPrefix>
+						</manifestEntries>
+						<manifestEntries>
+							<addClasspath>true</addClasspath>
+							<Class-Path>ftcClient-0.1.jar</Class-Path>
+							<classpathPrefix>dependency-jars/</classpathPrefix>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+			<!-- Copy project dependency -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.5.1</version>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<!-- exclude junit, we need runtime dependency only -->
+							<includeScope>runtime</includeScope>
+							<outputDirectory>${project.build.directory}/dependency-jars/</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 		</plugins>
 	</build>
 	<dependencies>
+		<dependency>
+			<groupId>org.cg.common</groupId>
+			<artifactId>JavaCommon</artifactId>
+			<version>0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.cg.ftc</groupId>
+			<artifactId>ftcShared</artifactId>
+			<version>0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.cg.ftc</groupId>
+			<artifactId>ftcConnector</artifactId>
+			<version>0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.cg.ftc</groupId>
+			<artifactId>ftcSql</artifactId>
+			<version>0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>bobbyLight</groupId>
+			<artifactId>bobbyLightRSyntaxTextArea</artifactId>
+			<version>0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>bobbyLight</groupId>
+			<artifactId>bobbyLightAutocomplete</artifactId>
+			<version>0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.miglayout</groupId>
+			<artifactId>miglayout-swing</artifactId>
+			<version>5.0</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+		</dependency>
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4-runtime</artifactId>

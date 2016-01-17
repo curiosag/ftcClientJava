@@ -3,6 +3,13 @@
 	<name>ftcClientJava</name>
 	<comment></comment>
 	<projects>
+		<project>bobbyLightAutocomplete</project>
+		<project>bobbyLightRSyntaxTextArea</project>
+		<project>ftcConnector</project>
+		<project>ftcParser</project>
+		<project>ftcShared</project>
+		<project>ftcSql</project>
+		<project>JavaCommon</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
