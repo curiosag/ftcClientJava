@@ -82,7 +82,6 @@ public class Client {
 				model.clientSecret.setValue(clientSettings.clientSecret);
 
 				controller.authenticate();
-				controller.initialized = true;
 			}
 		};
 	}

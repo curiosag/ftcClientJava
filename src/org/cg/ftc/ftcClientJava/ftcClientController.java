@@ -42,8 +42,6 @@ import manipulations.QueryHandler;
 
 public class ftcClientController implements ActionListener, SyntaxElementSource, CompletionsSource {
 
-	public boolean initialized = false;
-	
 	public final ftcClientModel model;
 	private final QueryHandler queryHandler;
 	private final AbstractLogger logging;
@@ -288,10 +286,7 @@ public class ftcClientController implements ActionListener, SyntaxElementSource,
 
 	@Override
 	public List<SyntaxElement> get(String query) {
-		if (initialized)
-			return queryHandler.getHighlighting(query);
-		else
-			return new ArrayList<SyntaxElement>();
+		return queryHandler.getHighlighting(query);
 	}
 
 	@Override

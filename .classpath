@@ -17,12 +17,12 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" kind="src" path="/bobbyLightAutocomplete"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/bobbyLightRSyntaxTextArea"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ftcConnector"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ftcParser"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ftcShared"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ftcSql"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JavaCommon"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/AutoComplete"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/RSyntaxTextArea"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

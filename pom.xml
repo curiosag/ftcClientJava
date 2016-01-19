@@ -1,12 +1,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.cg.ftc</groupId>
 	<artifactId>ftcClientJava</artifactId>
-	<version>0.1</version>
 	<properties>
 		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
 	</properties>
+	<parent>
+		<groupId>org.cg.ftc</groupId>
+		<artifactId>ftc</artifactId>
+		<version>0.1</version>
+	</parent>
 	<build>
 		<finalName>ftc</finalName>
 		<sourceDirectory>src</sourceDirectory>
@@ -63,12 +66,12 @@
 						</manifestEntries>
 						<manifestEntries>
 							<addClasspath>true</addClasspath>
-							<Class-Path>bobbyLightRSyntaxTextArea-0.1.jar</Class-Path>
+							<Class-Path>RSyntaxTextArea-0.1.jar</Class-Path>
 							<classpathPrefix>dependency-jars/</classpathPrefix>
 						</manifestEntries>
 						<manifestEntries>
 							<addClasspath>true</addClasspath>
-							<Class-Path>bobbyLightAutocomplete-0.1.jar</Class-Path>
+							<Class-Path>Autocomplete-0.1.jar</Class-Path>
 							<classpathPrefix>dependency-jars/</classpathPrefix>
 						</manifestEntries>
 						<manifestEntries>
@@ -124,13 +127,13 @@
 			<version>0.1</version>
 		</dependency>
 		<dependency>
-			<groupId>bobbyLight</groupId>
-			<artifactId>bobbyLightRSyntaxTextArea</artifactId>
+			<groupId>org.cg.ftc</groupId>
+			<artifactId>RSyntaxTextArea</artifactId>
 			<version>0.1</version>
 		</dependency>
 		<dependency>
-			<groupId>bobbyLight</groupId>
-			<artifactId>bobbyLightAutocomplete</artifactId>
+			<groupId>org.cg.ftc</groupId>
+			<artifactId>Autocomplete</artifactId>
 			<version>0.1</version>
 		</dependency>
 		<dependency>
